@@ -1,0 +1,27 @@
+services:
+  inventory-db:
+    image: postgres:16-alpine
+    container_name: eventflow-inventory-db
+    environment:
+      POSTGRES_DB: inventory_db
+      POSTGRES_USER: eventflow
+      POSTGRES_PASSWORD: eventflow_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - inventory-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventflow -d inventory_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: eventflow-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+volumes:
+  inventory-data:
