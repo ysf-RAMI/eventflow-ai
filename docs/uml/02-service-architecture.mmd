@@ -1,0 +1,42 @@
+flowchart TB
+    subgraph Identity["Identity"]
+      KC["Keycloak<br/>Users, credentials, roles"]
+    end
+
+    subgraph Edge["Application edge"]
+      FE["Angular Frontend"]
+      GW["API Gateway (planned)"]
+      FE --> GW
+      KC --> GW
+    end
+
+    subgraph Core["Core MVP services — synchronous REST"]
+      CAT["Catalog Service<br/>Event CRUD"]
+      INV["Inventory Service<br/>Seat + SeatHold"]
+      BOOK["Booking Service<br/>Booking + BookingItem<br/>Saga Orchestrator"]
+      PAY["Payment Service<br/>Payment simulation only"]
+
+      BOOK <-->|"Hold / confirm / release"| INV
+      BOOK <-->|"Simulate payment"| PAY
+    end
+
+    subgraph Databases["Database ownership"]
+      CDB[("catalog_db")]
+      IDB[("inventory_db")]
+      BDB[("booking_db")]
+      PDB[("payment_db")]
+    end
+
+    GW --> CAT
+    GW --> INV
+    GW --> BOOK
+    GW --> PAY
+    CAT --> CDB
+    INV --> IDB
+    BOOK --> BDB
+    PAY --> PDB
+
+    AI["AI Agent + MCP (later)"] -.-> CAT
+    AI -.-> INV
+    AI -.-> BOOK
+    NOTIF["Notification Service (later)"] -.->|"REST"| BOOK

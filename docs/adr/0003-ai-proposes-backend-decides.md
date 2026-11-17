@@ -1,13 +1,17 @@
 # ADR 0003: The AI agent proposes; the backend decides
 
-Status: Proposed (T-010)
+Status: Accepted for the later AI phase — 17 November 2026.
 
 ## Context
-An LLM can misunderstand a request or be manipulated by prompt injection. Booking and payment must be deterministic and authorized.
+
+An LLM can misunderstand a request or be manipulated. Booking actions and payment confirmation must be deterministic and authorized.
 
 ## Decision
-The agent calls only allowlisted tools. Each tool runs under the authenticated customer's identity. Payment and cancellation require an explicit confirmation step from the customer, enforced by the backend, not by the model.
+
+The future agent uses allowlisted MCP tools under the authenticated customer's identity. It may search events, check availability, create a booking hold through Booking, and read the customer's booking status. It cannot simulate or confirm payment. The customer explicitly confirms the payment step through the Booking REST API. The backend performs authorization and state validation.
 
 ## Consequences
-- The agent cannot pay, cancel, or refund on its own.
-- Each tool needs its own authorization tests (T-043, T-044).
+
+- The AI agent cannot pay, refund, or mutate event administration data.
+- Inventory hold creation is not exposed directly to the agent; it goes through Booking.
+- Tool inputs and model output are untrusted and must be validated by backend code.

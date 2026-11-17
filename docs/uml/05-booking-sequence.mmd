@@ -1,0 +1,43 @@
+sequenceDiagram
+    autonumber
+    actor Customer
+    participant Gateway as API Gateway
+    participant Booking as Booking Service
+    participant Inventory as Inventory Service
+    participant Payment as Payment Simulator
+
+    Customer->>Gateway: POST /api/bookings (eventId, seatIds)
+    Gateway->>Booking: Create booking for JWT subject
+    Booking->>Booking: Save Booking(PENDING)
+    Booking->>Inventory: POST /internal/holds (bookingId, seatIds)
+    Inventory->>Inventory: Atomically hold all seats
+    Inventory-->>Booking: Held seats + prices + expiresAt
+    Booking->>Booking: Save BookingItems + total + holdExpiresAt
+    Booking->>Booking: Set status HELD
+    Booking-->>Customer: Booking HELD + expiry
+
+    Customer->>Gateway: POST /api/bookings/{id}/confirm-payment
+    Gateway->>Booking: Explicit customer confirmation
+    Booking->>Payment: POST /internal/payments/simulate
+    Payment->>Payment: Create or return one simulation per booking
+    Payment-->>Booking: SUCCEEDED or FAILED
+
+    alt Payment simulation succeeded
+        Booking->>Inventory: POST /internal/holds/{bookingId}/confirm
+        alt Hold still active
+            Inventory->>Inventory: Mark holds CONFIRMED and seats SOLD
+            Inventory-->>Booking: Confirmation successful
+            Booking->>Booking: Set status CONFIRMED
+            Booking-->>Customer: Booking CONFIRMED
+        else Hold expired or cannot be confirmed
+            Inventory-->>Booking: Conflict / expired
+            Booking->>Inventory: DELETE /internal/holds/{bookingId}
+            Booking->>Booking: Set status EXPIRED or FAILED
+            Booking-->>Customer: Booking not confirmed
+        end
+    else Payment simulation failed
+        Booking->>Inventory: DELETE /internal/holds/{bookingId}
+        Inventory-->>Booking: Active holds released
+        Booking->>Booking: Set status FAILED
+        Booking-->>Customer: Payment simulation failed
+    end

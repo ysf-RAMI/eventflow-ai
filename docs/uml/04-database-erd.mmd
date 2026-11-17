@@ -1,0 +1,62 @@
+erDiagram
+    EVENTS {
+        UUID id PK
+        UUID created_by
+        VARCHAR title
+        TEXT description
+        TIMESTAMP event_date
+        VARCHAR status
+    }
+
+    EVENT_SEAT {
+        UUID id PK
+        UUID event_id "external Catalog UUID"
+        VARCHAR label
+        VARCHAR section
+        BIGINT price_cents
+        VARCHAR status
+        BIGINT version
+    }
+
+    SEAT_HOLD {
+        UUID id PK
+        UUID seat_id FK
+        UUID booking_id "external Booking UUID"
+        TIMESTAMPTZ expires_at
+        VARCHAR status
+        TIMESTAMPTZ created_at
+    }
+
+    BOOKING {
+        UUID id PK
+        UUID customer_id "Keycloak subject"
+        UUID event_id "external Catalog UUID"
+        VARCHAR status
+        BIGINT total_cents
+        TIMESTAMPTZ hold_expires_at
+        TIMESTAMPTZ created_at
+    }
+
+    BOOKING_ITEM {
+        UUID id PK
+        UUID booking_id FK
+        UUID seat_id "external Inventory UUID"
+        BIGINT price_cents
+    }
+
+    PAYMENT {
+        UUID id PK
+        UUID booking_id "external Booking UUID, UNIQUE"
+        BIGINT amount_cents
+        VARCHAR status
+        TIMESTAMPTZ created_at
+    }
+
+    EVENT_SEAT ||--o{ SEAT_HOLD : "local FK"
+    BOOKING ||--|{ BOOKING_ITEM : "local FK"
+
+    EVENTS ||..o{ EVENT_SEAT : "event_id logical reference"
+    EVENTS ||..o{ BOOKING : "event_id logical reference"
+    EVENT_SEAT ||..o{ BOOKING_ITEM : "seat_id logical reference"
+    BOOKING ||..o{ SEAT_HOLD : "booking_id logical reference"
+    BOOKING ||..o| PAYMENT : "booking_id logical reference"

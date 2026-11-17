@@ -1,0 +1,115 @@
+classDiagram
+    direction LR
+
+    namespace CatalogService {
+      class Event {
+        +UUID id
+        +UUID createdBy
+        +String title
+        +String description
+        +LocalDateTime date
+        +EventStatus status
+      }
+      class EventStatus {
+        <<enumeration>>
+        DRAFT
+        PUBLISHED
+        CANCELLED
+        COMPLETED
+      }
+    }
+
+    namespace InventoryService {
+      class Seat {
+        +UUID id
+        +UUID eventId
+        +String label
+        +String section
+        +long priceCents
+        +SeatStatus status
+        +long version
+        +hold()
+        +release()
+        +sell()
+      }
+      class SeatHold {
+        +UUID id
+        +UUID seatId
+        +UUID bookingId
+        +Instant expiresAt
+        +HoldStatus status
+        +Instant createdAt
+        +confirm()
+        +release()
+        +expire(now)
+      }
+      class SeatStatus {
+        <<enumeration>>
+        AVAILABLE
+        HELD
+        SOLD
+      }
+      class HoldStatus {
+        <<enumeration>>
+        ACTIVE
+        CONFIRMED
+        RELEASED
+        EXPIRED
+      }
+    }
+
+    namespace BookingService {
+      class Booking {
+        +UUID id
+        +UUID customerId
+        +UUID eventId
+        +BookingStatus status
+        +Long totalCents
+        +Instant holdExpiresAt
+        +Instant createdAt
+        +markHeld()
+        +markFailed()
+        +confirm()
+        +cancel()
+        +expire()
+      }
+      class BookingItem {
+        +UUID id
+        +UUID bookingId
+        +UUID seatId
+        +long priceCents
+      }
+      class BookingStatus {
+        <<enumeration>>
+        PENDING
+        HELD
+        CONFIRMED
+        FAILED
+        EXPIRED
+        CANCELLED
+      }
+    }
+
+    namespace PaymentService {
+      class Payment {
+        +UUID id
+        +UUID bookingId
+        +long amountCents
+        +PaymentStatus status
+        +Instant createdAt
+      }
+      class PaymentStatus {
+        <<enumeration>>
+        PENDING
+        SUCCEEDED
+        FAILED
+      }
+    }
+
+    Booking "1" *-- "1..*" BookingItem : local SQL relationship
+    Seat "1" --> "0..*" SeatHold : local hold history
+
+    note for Event "Owned by Catalog Service"
+    note for Seat "Owned by Inventory Service"
+    note for Booking "Owned by Booking Service"
+    note for Payment "Owned by Payment Service"

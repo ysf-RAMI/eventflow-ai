@@ -1,5 +1,7 @@
-# ai-agent-service
+# ai-agent-service — later phase
 
-Spring AI agent with RAG and allowlisted tools. Acts only under the customer's identity and needs confirmation for payment and cancellation. Owner: Role 3. Planned: T-040 to T-045.
+Planned Spring AI agent with RAG and allowlisted MCP tools. It acts only under the authenticated customer's identity.
 
-Status: not started. Build with Spring Boot 3.3, Java 21, following the inventory-service layout. Each service has its own database and no shared tables.
+Planned database: `ai_db` with `policy_document` and `document_chunk` (pgvector). This database is not included in the current Docker Compose core stack.
+
+The agent may search events, check availability, create a booking hold through Booking MCP tools, and read the current customer's bookings. It must not confirm payment, simulate payment, refund, or use admin mutation tools. MCP implementation is deferred until the core REST services are stable.

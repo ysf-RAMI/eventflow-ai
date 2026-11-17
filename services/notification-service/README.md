@@ -1,5 +1,5 @@
-# notification-service
+# notification-service — deferred
 
-Consumes booking and payment events and sends Telegram messages. Owner: Role 4. Planned: T-036, T-037.
+Notification delivery is explicitly deferred and is not part of the MVP implementation. No broker consumer, Telegram bot, notification database, or notification dependency is included in the current workflow.
 
-Status: not started. Build with Spring Boot 3.3, Java 21, following the inventory-service layout. Each service has its own database and no shared tables.
+When introduced later, notifications should use REST initially and must never determine booking/payment correctness. A failed notification must not roll back a confirmed booking.

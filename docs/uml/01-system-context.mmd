@@ -1,0 +1,40 @@
+flowchart LR
+    Customer["Customer"]
+    Admin["Admin"]
+    Keycloak["Keycloak<br/>Identity + CUSTOMER / ADMIN roles"]
+    Angular["Angular Frontend"]
+    Gateway["API Gateway<br/>(planned)"]
+
+    Catalog["Catalog Service"]
+    Inventory["Inventory Service"]
+    Booking["Booking Service<br/>Saga Orchestrator"]
+    Payment["Payment Service<br/>Simulator"]
+    AI["AI Agent Service<br/>(later)"]
+    Notification["Notification Service<br/>(later)"]
+
+    CatalogDB[("catalog_db")]
+    InventoryDB[("inventory_db")]
+    BookingDB[("booking_db")]
+    PaymentDB[("payment_db")]
+
+    Customer --> Angular
+    Admin --> Angular
+    Angular --> Gateway
+    Keycloak --> Gateway
+    Gateway --> Catalog
+    Gateway --> Inventory
+    Gateway --> Booking
+    Gateway --> Payment
+
+    Catalog --> CatalogDB
+    Inventory --> InventoryDB
+    Booking --> BookingDB
+    Payment --> PaymentDB
+
+    Booking <-->|"REST"| Inventory
+    Booking <-->|"REST: simulated payment"| Payment
+
+    AI -.->|"MCP tools, later"| Catalog
+    AI -.->|"MCP tools, later"| Inventory
+    AI -.->|"MCP tools, later"| Booking
+    Notification -.->|"REST, later"| Booking

@@ -1,13 +1,17 @@
-# ADR 0002: PostgreSQL is the source of truth; Redis only caches
+# ADR 0002: PostgreSQL is the source of truth
 
-Status: Proposed (T-010)
+Status: Accepted — 17 November 2026.
 
 ## Context
-Seat exclusivity, booking state, and payments must never be inconsistent. A cache cannot guarantee this on its own.
+
+Seat exclusivity, booking state, and simulated payment results must remain consistent. A cache must not decide whether a seat is available or a booking is confirmed.
 
 ## Decision
-Seats, holds, bookings, and payments live in PostgreSQL, one database per service. Concurrency is enforced with atomic conditional updates, row-level locking, and unique constraints. Redis is used only for caching and rate limiting.
+
+Each business service owns its PostgreSQL database. Inventory enforces seat concurrency using transactions, conditional updates/locking, and a partial unique index for active holds. Booking owns booking records and orchestrates the Saga. Payment owns one simulated payment record per booking. Redis is not required for the MVP.
 
 ## Consequences
-- Correctness is testable in the database with concurrency tests.
-- Redis is optional for the MVP and can be added without changing correctness.
+
+- Correctness is enforced and tested in the owning database.
+- Cross-service relationships are UUID references only; no cross-database foreign keys or JPA associations.
+- A service never writes directly to another service's database.

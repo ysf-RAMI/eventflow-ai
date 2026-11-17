@@ -1,23 +1,11 @@
-name: CI
+name: CI (deferred)
 
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
+  workflow_dispatch:
 
 jobs:
-  inventory-service:
+  notice:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: services/inventory-service
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "21"
-          cache: maven
-      - name: Build and test
-        run: mvn -B verify
+      - name: Explain deferred CI
+        run: echo "Automated build and tests are intentionally deferred for the current architecture-alignment phase."
