@@ -12,7 +12,7 @@ EventFlow AI is a distributed event-reservation platform with an AI booking assi
 | Catalog Service | 8081 | `catalog_db` (5432) | Spring Boot domain/persistence baseline |
 | Inventory Service | 8082 | `inventory_db` (5433) | Existing Seat skeleton; SeatHold design and migration added |
 | Booking Service | 8083 | `booking_db` (5434) | Spring Boot domain/persistence baseline |
-| Payment Service | 8084 | `payment_db` (5435) | Simulation-only domain/persistence baseline |
+| Payment Service | 8084 | `payment_db` (5435) | Simulation REST endpoints and persistence |
 | AI Agent Service | 8085 | `ai_db` (5436, future) | Later phase: RAG and controlled MCP tools |
 | Notification Service | 8086 | none initially | Deferred; no notification implementation in MVP |
 | Angular frontend | 4200 | none | Planned |
@@ -105,7 +105,7 @@ frontend/angular-app/  Planned Angular client
 
 ## 7. Current implementation boundary
 
-This alignment includes domain entities, repositories, Flyway migrations, and application configuration for the four core services. REST controllers, Keycloak enforcement, inter-service clients, and end-to-end orchestration remain the next implementation phase. Do not add or run tests as part of this update task; existing test files are preserved unchanged. Compilation, runtime, Flyway, and end-to-end validation are not performed here.
+This alignment includes domain entities, repositories, Flyway migrations, and application configuration for the four core services. Payment REST endpoints are implemented. Other REST controllers, Keycloak enforcement, inter-service clients, and end-to-end orchestration remain the next implementation phase. Do not add or run tests as part of this update task; existing test files are preserved unchanged. Compilation, runtime, Flyway, and end-to-end validation are not performed here.
 
 See [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for the current status and [AGENT_PROMPT.md](AGENT_PROMPT.md) for the repository-update instructions.
 
