@@ -1,5 +1,6 @@
-package com.eventflow.inventory.domain;
+package com.eventflow.inventory.repository;
 
+import com.eventflow.inventory.domain.Seat;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
