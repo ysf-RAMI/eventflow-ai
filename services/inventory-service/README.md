@@ -1,38 +1,47 @@
 # inventory-service
 
-Owns seats, seat holds, and availability for every event. Owner: Role 1 (see docs/project/ROLES.md).
+Owns event seats, seat holds, availability, hold confirmation/release, and authoritative hold expiry. It stores `event_id` and `booking_id` as external UUID references; it does not own Event or Booking entities.
 
-## Run locally
+## Local run
 
-From the repo root, start the database first:
+From repository root:
 
-```
+```bash
 docker compose up -d inventory-db
-```
-
-Then from this folder:
-
-```
+cd services/inventory-service
 mvn spring-boot:run
 ```
 
-Health check: http://localhost:8082/actuator/health
+Health: http://localhost:8082/actuator/health
 
-## Test
+## Tables and entities
 
+- `event_seat` → `Seat.java`, `SeatStatus.java` (existing skeleton / V1 migration).
+- `seat_hold` → `SeatHold.java`, `HoldStatus.java` (approved V2 schema baseline).
+
+`SeatHold.expiresAt` in Inventory is the authoritative expiry. The default hold duration is 10 minutes. A partial unique index permits at most one `ACTIVE` hold per seat. Multi-seat holds must be all-or-nothing in one local transaction.
+
+## Planned Java structure
+
+```text
+ domain/Seat.java
+ domain/SeatStatus.java
+ domain/SeatHold.java
+ domain/HoldStatus.java
+ repository/SeatRepository.java
+ repository/SeatHoldRepository.java
+ service/SeatService.java
+ service/SeatHoldService.java
+ service/HoldExpiryScheduler.java
+ controller/rest/InventoryRestController.java
+ controller/mcp/InventoryMcpTools.java
+ dto/*.java (records)
 ```
-mvn verify
-```
 
-## Current state (first commit)
+MCP tools are read-only. Hold creation, confirmation, and release are called by Booking over internal REST. GraphQL is future scope.
 
-- `Seat` entity with status rules (`hold`, `release`, `sell`) and unit tests
-- Flyway V1 creates `event_seat`
-- Health endpoint
+## Current implementation status
 
-## Planned
-
-- T-021: `seat_hold` table with one ACTIVE hold per seat
-- T-022: atomic hold endpoint with concurrency test
-- T-023: expiry job
-- T-012: OpenAPI contract in docs/api-contracts
+- Existing: Seat entity, SeatStatus, V1 migration, health endpoint, and pre-existing Seat unit test files (preserved; not run in this handoff).
+- Added in this baseline: SeatHold entity/status, repository, and V2 migration.
+- Pending: service layer, REST endpoints, atomic multi-seat hold, scheduler, MCP tools, automated tests (deferred to the later QA phase).

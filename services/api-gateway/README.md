@@ -1,5 +1,5 @@
-# api-gateway
+# api-gateway — planned
 
-Entry point for the web app and Telegram. JWT authentication and routing. Owner: Role 4. Planned: T-055.
+Spring Cloud Gateway entry point for Angular. It will validate Keycloak JWTs, route requests to Catalog, Inventory, Booking, and Payment, and enforce coarse-grained route access. Business services must still validate ownership and business permissions.
 
-Status: not started. Build with Spring Boot 3.3, Java 21, following the inventory-service layout. Each service has its own database and no shared tables.
+Planned port: `8080`. Keycloak integration and gateway implementation are not yet included in the runnable skeleton.

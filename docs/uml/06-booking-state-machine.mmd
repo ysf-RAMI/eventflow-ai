@@ -1,0 +1,12 @@
+stateDiagram-v2
+    [*] --> PENDING: booking accepted
+    PENDING --> HELD: Inventory hold succeeded
+    PENDING --> FAILED: hold rejected / unrecoverable error
+    HELD --> CONFIRMED: payment simulation succeeded + Inventory confirmed
+    HELD --> FAILED: payment simulation failed
+    HELD --> EXPIRED: Inventory hold expired
+    HELD --> CANCELLED: customer cancels before payment
+    CONFIRMED --> [*]
+    FAILED --> [*]
+    EXPIRED --> [*]
+    CANCELLED --> [*]

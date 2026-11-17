@@ -1,4 +1,21 @@
 services:
+  catalog-db:
+    image: postgres:16-alpine
+    container_name: eventflow-catalog-db
+    environment:
+      POSTGRES_DB: catalog_db
+      POSTGRES_USER: eventflow
+      POSTGRES_PASSWORD: eventflow_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - catalog-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventflow -d catalog_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   inventory-db:
     image: postgres:16-alpine
     container_name: eventflow-inventory-db
@@ -16,12 +33,42 @@ services:
       timeout: 3s
       retries: 10
 
-  rabbitmq:
-    image: rabbitmq:3.13-management
-    container_name: eventflow-rabbitmq
+  booking-db:
+    image: postgres:16-alpine
+    container_name: eventflow-booking-db
+    environment:
+      POSTGRES_DB: booking_db
+      POSTGRES_USER: eventflow
+      POSTGRES_PASSWORD: eventflow_dev
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5434:5432"
+    volumes:
+      - booking-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventflow -d booking_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  payment-db:
+    image: postgres:16-alpine
+    container_name: eventflow-payment-db
+    environment:
+      POSTGRES_DB: payment_db
+      POSTGRES_USER: eventflow
+      POSTGRES_PASSWORD: eventflow_dev
+    ports:
+      - "5435:5432"
+    volumes:
+      - payment-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventflow -d payment_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
 volumes:
+  catalog-data:
   inventory-data:
+  booking-data:
+  payment-data:
