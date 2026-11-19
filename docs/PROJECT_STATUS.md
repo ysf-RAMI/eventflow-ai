@@ -40,3 +40,11 @@ Testing and runtime verification belong to a later, explicitly approved QA phase
 3. Implement one service at a time.
 4. Keep service ownership and REST contracts aligned.
 5. Do not add deferred technologies or features without an explicit architecture decision.
+
+## Payment implementation follow-up (T-041 / T-042)
+
+Payment now includes its DTO records, deterministic simulator, application service
+and internal REST controller. Duplicate booking requests return the stored result;
+conflicting amounts return 409. Concurrent insertion conflicts are recovered after
+rollback. No schema changes were needed. Booking integration and internal endpoint
+authentication remain pending. This update does not establish end-to-end readiness.

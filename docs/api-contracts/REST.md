@@ -61,3 +61,16 @@ The payment simulator does not connect to a real provider and does not move mone
 - `503`: dependent service unavailable or timed out.
 
 All inter-service calls require bounded connect/read timeouts. Retries must be limited and used only for idempotent operations.
+
+### Payment implementation details (T-041 / T-042)
+
+POST `/internal/payments/simulate` requires `{ "bookingId": "UUID", "amountCents": 15000 }`.
+It returns HTTP 200 and `{ id, bookingId, amountCents, status, createdAt }`.
+Missing fields, malformed UUIDs or negative amounts return 400. Zero is allowed.
+Identical retries return the original stored result. A different amount for an
+existing booking returns 409; the existing result is unchanged. Concurrent
+requests are deduplicated using the unique booking_id database constraint.
+GET returns the same response, or 404 if the booking has no payment.
+`PAYMENT_SIMULATION_RESULT` selects SUCCEEDED (default) or FAILED on the server.
+These routes are implemented; service authentication is still pending and they
+must remain restricted to trusted local development until it is integrated.
