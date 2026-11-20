@@ -45,3 +45,21 @@ MCP tools are read-only. Hold creation, confirmation, and release are called by 
 - Existing: Seat entity, SeatStatus, V1 migration, health endpoint, and pre-existing Seat unit test files (preserved; not run in this handoff).
 - Added in this baseline: SeatHold entity/status, repository, and V2 migration.
 - Pending: service layer, REST endpoints, atomic multi-seat hold, scheduler, MCP tools, automated tests (deferred to the later QA phase).
+
+## Booking integration contract
+
+Inventory remains the owner of seat availability and seat state transitions. Booking does not
+create or update seat records directly.
+
+The Booking workflow is:
+
+1. Booking sends the event ID and selected seat IDs to Inventory.
+2. Inventory returns one status for each requested seat.
+3. If all seats are `AVAILABLE`, Booking requests an atomic hold with an expiry time.
+4. Inventory returns a hold ID and the authoritative expiry time.
+5. After simulated payment succeeds, Booking asks Inventory to confirm the hold; seats become `SOLD`.
+6. If payment fails or an unpaid booking is cancelled, Booking asks Inventory to release the hold.
+
+The hold ID is stored by Booking only as an external reference. Booking does not create an
+Inventory entity or a cross-service JPA relationship. The local Booking development stub
+simulates these calls until the Inventory REST service is available.

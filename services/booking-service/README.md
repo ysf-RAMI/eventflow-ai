@@ -50,13 +50,38 @@ MCP tools can create a booking hold and read the authenticated customer's bookin
 
 ## REST Saga
 
-1. Persist Booking as `PENDING`.
-2. Call Inventory to atomically hold all requested seats.
-3. On success, persist BookingItems, total and hold expiry; transition to `HELD`.
-4. Wait for explicit customer confirmation.
-5. Call Payment simulator.
-6. On simulated success, ask Inventory to confirm the active hold; only then mark Booking `CONFIRMED`.
-7. On failure, expiry, or unpaid cancellation, release any still-active hold and update Booking state.
+The frontend sends booking request data, not `Booking` or `BookingItem` entities:
+
+```json
+{
+  "customerId": "customer-uuid",
+  "eventId": "event-uuid",
+  "items": [
+    {
+      "seatId": "seat-uuid",
+      "priceCents": 2500
+    }
+  ]
+}
+```
+
+`bookingId`, `inventoryHoldId`, `status`, `createdAt`, and `holdExpiresAt` are generated or
+set by Booking. `BookingItem` rows are created inside the service after the new Booking receives
+its generated ID.
+
+The current local development workflow is:
+
+1. Validate the request and selected seats.
+2. Ask Inventory for the status of every selected seat.
+3. Request an atomic Inventory hold with a 15-minute expiry.
+4. Save the Booking as `HELD` and save its BookingItems.
+5. Call the simulated Payment client.
+6. On payment success, confirm the Inventory hold and mark Booking `CONFIRMED`.
+7. On payment failure or an error, release the hold and mark the Booking `FAILED`.
+8. On unpaid cancellation, release the active hold and mark Booking `CANCELLED`.
+
+The production contract keeps the same ownership boundary, but uses the Inventory REST service
+instead of the local stub. Inventory remains authoritative for seat status and hold expiry.
 
 Calls use bounded timeouts. The Saga is a sequence of local transactions and REST calls, not a distributed database transaction.
 

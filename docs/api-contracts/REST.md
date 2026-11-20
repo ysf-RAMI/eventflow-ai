@@ -24,11 +24,20 @@ Event fields: `id`, `createdBy`, `title`, `description`, `date`, `status`. `date
 | GET | `/api/events/{eventId}/availability` | Authenticated | Availability summary/details |
 | PATCH | `/api/seats/{seatId}` | ADMIN | Update eligible seat fields |
 | DELETE | `/api/seats/{seatId}` | ADMIN | Delete eligible unsold/unheld seat |
-| POST | `/internal/holds` | Booking service only | Atomically hold multiple seats |
+| POST | `/internal/holds/status` | Booking service only | Return the current status for requested seat IDs |
+| POST | `/internal/holds` | Booking service only | Atomically hold multiple seats and return prices and expiry |
 | POST | `/internal/holds/{bookingId}/confirm` | Booking service only | Confirm active hold; seats become SOLD |
 | DELETE | `/internal/holds/{bookingId}` | Booking service only | Release active holds for booking |
 
-`POST /internal/holds` request concept: `bookingId`, `seatIds`. Response concept: `bookingId`, held seat details (`seatId`, `label`, `priceCents`), and `expiresAt`.
+`POST /internal/holds/status` request concept: `eventId`, `seatIds`. The response contains one
+status for each requested seat. Booking proceeds only when every status is `AVAILABLE`.
+
+`POST /internal/holds` request concept: `bookingId`, `eventId`, `seatIds`, and `expiresAt`.
+Response concept: `bookingId`, a generated `holdId`, held seat details (`seatId`, `label`,
+`priceCents`), and the authoritative `expiresAt`.
+
+Booking stores only the returned `holdId` and price snapshots. Inventory owns the seat rows and
+performs `AVAILABLE → HELD → SOLD` or `HELD → AVAILABLE` transitions.
 
 ## Booking Service — port 8083
 

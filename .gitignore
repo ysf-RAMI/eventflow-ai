@@ -1,6 +1,7 @@
 # Build output
 target/
 out/
+data/
 
 # IDEs
 .idea/

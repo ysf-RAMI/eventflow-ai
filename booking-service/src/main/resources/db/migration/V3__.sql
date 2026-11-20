@@ -1,0 +1,5 @@
+ALTER TABLE booking
+    ADD inventory_hold_id UUID;
+
+ALTER TABLE BOOKING
+    DROP COLUMN SEATS_NUMBER;
