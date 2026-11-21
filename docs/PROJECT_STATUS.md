@@ -48,3 +48,8 @@ and internal REST controller. Duplicate booking requests return the stored resul
 conflicting amounts return 409. Concurrent insertion conflicts are recovered after
 rollback. No schema changes were needed. Booking integration and internal endpoint
 authentication remain pending. This update does not establish end-to-end readiness.
+
+
+## Catalog implementation follow-up (T-012)
+
+Catalog now includes Event update/delete rules, DTO records, a title and date-range search query, `EventService`, `EventRestController` and error handling. The six REST routes were verified manually with curl against a local PostgreSQL; no automated tests were added. The detailed contract is `docs/api-contracts/CATALOG_REST.md`. `ADMIN` enforcement and the real `createdBy` source (Keycloak JWT) are pending with T-050; until then `X-User-Id` is a placeholder header. MCP tools (T-013) are pending. No schema changes were needed. This update does not establish end-to-end readiness.

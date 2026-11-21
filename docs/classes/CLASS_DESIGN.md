@@ -26,6 +26,7 @@ This document is the class-level implementation guide. It describes ownership an
 - `EventRestController`: admin CRUD and event read endpoints.
 - `EventMcpTools`: read-only search/details tools for the future AI agent.
 - DTO records: `CreateEventRequest`, `UpdateEventRequest`, `EventResponse`.
+- `EventNotFoundException`, `GlobalExceptionHandler`: error handling (404 / 400).
 
 ### Suggested package layout
 ```text
@@ -39,6 +40,8 @@ catalog/
   dto/CreateEventRequest.java
   dto/UpdateEventRequest.java
   dto/EventResponse.java
+  exception/EventNotFoundException.java
+  exception/GlobalExceptionHandler.java
 ```
 
 `Event.date` is one `LocalDateTime` property stored as `event_date`. Do not reintroduce venue fields, start/end fields, cancellation policy, or event audit timestamps in the approved MVP entity.
