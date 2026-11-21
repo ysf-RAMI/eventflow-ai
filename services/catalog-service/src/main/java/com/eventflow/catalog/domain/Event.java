@@ -13,6 +13,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "events")
 public class Event {
+    private static final int MAX_TITLE_LENGTH = 200;
 
     @Id
     private UUID id;
@@ -20,7 +21,7 @@ public class Event {
     @Column(name = "created_by", nullable = false)
     private UUID createdBy;
 
-    @Column(nullable = false, length = 200)
+    @Column(nullable = false, length = MAX_TITLE_LENGTH)
     private String title;
 
     @Column(columnDefinition = "TEXT")
@@ -50,12 +51,42 @@ public class Event {
         return event;
     }
 
+
+    public void update(String title, String description, LocalDateTime date) {
+        if (status != EventStatus.DRAFT) {
+            throw new IllegalStateException("Only draft events can be updated");
+        }
+        requireTitleAndDate(title, date);
+        this.title = title;
+        this.description = description;
+        this.date = date;
+    }
+
+    public void requireDeletable() {
+        if (status != EventStatus.DRAFT) {
+            throw new IllegalStateException("Only draft events can be deleted");
+        }
+    }
+
+    private static void requireTitleAndDate(String title, LocalDateTime date) {
+        if (title == null || title.isBlank() || date == null) {
+            throw new IllegalArgumentException("Title and date are required");
+        }
+        if (title.codePointCount(0, title.length())  > MAX_TITLE_LENGTH) {
+            throw new IllegalArgumentException("Title must not exceed " + MAX_TITLE_LENGTH + " characters");
+        }
+    }
+
+
+
     public void publish() {
         if (status != EventStatus.DRAFT) {
             throw new IllegalStateException("Only draft events can be published");
         }
         status = EventStatus.PUBLISHED;
     }
+
+
 
     public UUID getId() { return id; }
     public UUID getCreatedBy() { return createdBy; }
