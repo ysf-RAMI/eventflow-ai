@@ -7,14 +7,15 @@ These routes are the agreed MVP contract baseline. Exact request/response record
 | Method | Route | Access | Purpose |
 |---|---|---|---|
 | POST | `/api/events` | ADMIN | Create draft event |
-| GET | `/api/events` | Authenticated / public read policy to decide in implementation | List/search events |
-| GET | `/api/events/{eventId}` | Authenticated / public read policy to decide in implementation | Event details |
-| PUT | `/api/events/{eventId}` | ADMIN | Update event |
+| GET | `/api/events` | Public read (published events only; admin draft visibility TBD) | Search published events |
+| GET | `/api/events/{eventId}` | Public read (published events only; admin draft visibility TBD) | Published event details |
+| PUT | `/api/events/{eventId}` | ADMIN | Update draft event |
 | POST | `/api/events/{eventId}/publish` | ADMIN | Publish event |
-| DELETE | `/api/events/{eventId}` | ADMIN | Delete eligible draft event |
+| DELETE | `/api/events/{eventId}` | ADMIN | Delete draft event |
 
 Event fields: `id`, `createdBy`, `title`, `description`, `date`, `status`. `date` is represented as `LocalDateTime` and stored as `event_date`.
 
+Detailed contract: [CATALOG_REST.md](CATALOG_REST.md).
 ## Inventory Service — port 8082
 
 | Method | Route | Access | Purpose |
