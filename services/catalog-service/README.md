@@ -12,9 +12,18 @@ Owns event creation, update, publication, search, and event details. It does not
 `Event` fields: `id`, `createdBy`, `title`, `description`, `date`, `status`.
 
 - `date`: Java `LocalDateTime`, stored in SQL as `event_date`.
-- `createdBy`: Keycloak JWT subject of the admin.
+- `createdBy`: Keycloak JWT subject of the admin (temporarily the `X-User-Id` header, see Security status).
 - `EventStatus`: `DRAFT`, `PUBLISHED`, `CANCELLED`, `COMPLETED`.
 - No venue fields, starts/ends pair, cancellation policy, or event audit timestamps in the approved MVP model.
+
+Lifecycle rules live in the entity:
+
+- A new event always starts as `DRAFT`.
+- `update` and delete are allowed on `DRAFT` events only.
+- `publish` moves `DRAFT` to `PUBLISHED`.
+- Titles are required and limited to 200 characters; the date is required.
+
+`CANCELLED` and `COMPLETED` exist in the enum but have no endpoints yet.
 
 ## Java structure
 
@@ -24,18 +33,81 @@ Owns event creation, update, publication, search, and event details. It does not
  repository/EventRepository.java
  service/EventService.java
  controller/rest/EventRestController.java
- controller/mcp/EventMcpTools.java
+ controller/mcp/EventMcpTools.java      (planned)
+ exception/EventNotFoundException.java
+ exception/GlobalExceptionHandler.java
  dto/CreateEventRequest.java       (record)
  dto/UpdateEventRequest.java       (record)
  dto/EventResponse.java            (record)
 ```
 
-`EventMcpTools` is an MCP tool component, not an MVC REST controller. MCP tools are read-only. Admin CRUD uses REST and requires `ADMIN`.
+`EventMcpTools` is an MCP tool component, not an MVC REST controller. MCP tools are read-only. Admin CRUD uses REST and requires `ADMIN` (enforcement pending, see Security status).
+
+`EventService` returns `EventResponse` records, never entities, so the future MCP tools can reuse it.
 
 ## Database
 
-Initial schema: `src/main/resources/db/migration/V1__create_events.sql`.
+Initial schema: `src/main/resources/db/migration/V1__create_events.sql`. No schema changes were needed for T-012.
+
+## Run locally
+
+```bash
+docker compose up -d catalog-db
+cd services/catalog-service
+mvn spring-boot:run
+```
+
+Database settings are in `src/main/resources/application.yml`. Flyway applies `V1__create_events.sql` at startup.
+
+## REST API
+
+| Method | Route | Access | Purpose |
+|---|---|---|---|
+| POST | `/api/events` | ADMIN | Create a draft event (returns 201) |
+| GET | `/api/events` | Public | Search published events |
+| GET | `/api/events/{eventId}` | Public | Published event details |
+| PUT | `/api/events/{eventId}` | ADMIN | Update a draft event |
+| POST | `/api/events/{eventId}/publish` | ADMIN | Publish a draft event |
+| DELETE | `/api/events/{eventId}` | ADMIN | Delete a draft event (returns 204) |
+
+Request body for create and update: `title` (required, max 200 characters), `description` (optional), `date` (required, ISO date-time such as `2026-12-01T20:00:00`).
+
+Search parameters on `GET /api/events`: `q` (case-insensitive title match), `dateFrom` and `dateTo` (ISO date-time, inclusive). Either date can be left out. Results are sorted by date, soonest first, and contain `PUBLISHED` events only.
+
+Status codes:
+
+- `200` success, `201` event created, `204` event deleted.
+- `400` invalid body, missing `X-User-Id` on create, malformed UUID, `dateFrom` after `dateTo`, or an action not allowed for the event's status (update, publish or delete on a non-draft event).
+- `404` event does not exist, or is a draft on `GET /api/events/{eventId}`.
+
+Full contract, response fields and error formats: `docs/api-contracts/CATALOG_REST.md`.
+
+## API usage
+
+The commands below create a draft, publish it, then search for it. `X-User-Id` is a temporary placeholder header, not authentication.
+
+```bash
+ID=$(curl -s -X POST localhost:8081/api/events \
+  -H 'Content-Type: application/json' \
+  -H 'X-User-Id: 11111111-1111-1111-1111-111111111111' \
+  -d '{"title":"Jazz Night","description":"Live","date":"2026-12-01T20:00:00"}' \
+  | sed -E 's/.*"id":"([^"]+)".*/\1/')
+
+curl -X POST localhost:8081/api/events/$ID/publish
+
+curl 'localhost:8081/api/events?q=jazz&dateFrom=2026-12-01T00:00:00'
+```
+
+The first command is an `ADMIN` route and stores the new event's id. The second publishes it (also `ADMIN`). The third searches published events and is public.
+
+## Security status
+
+- `X-User-Id` is a temporary header used only to fill `createdBy` on create. It is not authentication: anyone can send any value.
+- No role check exists yet, so the `ADMIN` routes are open. Keycloak and role-based authorization arrive with T-050.
+- Do not expose this service directly to untrusted clients until T-050 is done.
 
 ## Status
 
-Spring Boot application, Event entity, EventStatus enum, repository, Flyway migration, and PostgreSQL configuration are present. REST controllers, Keycloak enforcement, DTO records, and MCP tools remain planned.
+Implemented (T-012): Event domain rules (`update`, `publish`, `requireDeletable`), DTO records, the search query, `EventService`, `EventRestController`, and error handling. The six REST routes above were checked manually with curl against a local PostgreSQL. No automated tests exist yet.
+
+Still pending: Keycloak enforcement and the real `createdBy` source (T-050), and `EventMcpTools` (T-013).
