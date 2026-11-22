@@ -10,21 +10,23 @@ These routes are the agreed MVP contract baseline. Exact request/response record
 | GET | `/api/events` | Public read (published events only; admin draft visibility TBD) | Search published events |
 | GET | `/api/events/{eventId}` | Public read (published events only; admin draft visibility TBD) | Published event details |
 | PUT | `/api/events/{eventId}` | ADMIN | Update draft event |
-| POST | `/api/events/{eventId}/publish` | ADMIN | Publish event |
+| POST | `/api/events/{eventId}/publish` | ADMIN | Publish event and provision its seats |
 | DELETE | `/api/events/{eventId}` | ADMIN | Delete draft event |
 
 Event fields: `id`, `createdBy`, `title`, `description`, `date`, `status`. `date` is represented as `LocalDateTime` and stored as `event_date`.
 
 Detailed contract: [CATALOG_REST.md](CATALOG_REST.md).
+
+Seat provisioning on publish: `publish` generates the event's seats and sends them to Inventory (`POST /internal/events/{eventId}/seats`) before changing the status. The count is a random whole number from 70 to 100 (inclusive). Each seat gets a random price from 100 to 1000 currency units, stored as `priceCents` (units × 100). Seats are in section `GENERAL` with labels `A1`, `A2`, … in rows of 10. The random generator is seeded from the event id, so retrying publish sends identical seats and prices. The status changes to `PUBLISHED` only after Inventory confirms. If Inventory is unavailable, times out or fails, `publish` returns `503` and the event stays `DRAFT`.
+
+
 ## Inventory Service — port 8082
 
 | Method | Route | Access | Purpose |
 |---|---|---|---|
-| POST | `/api/events/{eventId}/seats` | ADMIN | Create seats |
 | GET | `/api/events/{eventId}/seats` | Authenticated | List seats |
 | GET | `/api/events/{eventId}/availability` | Authenticated | Availability summary/details |
-| PATCH | `/api/seats/{seatId}` | ADMIN | Update eligible seat fields |
-| DELETE | `/api/seats/{seatId}` | ADMIN | Delete eligible unsold/unheld seat |
+| POST | `/internal/events/{eventId}/seats` | Catalog service only | Provision generated seats when an event is published (idempotent) |
 | POST | `/internal/holds/status` | Booking service only | Return the current status for requested seat IDs |
 | POST | `/internal/holds` | Booking service only | Atomically hold multiple seats and return prices and expiry |
 | POST | `/internal/holds/{bookingId}/confirm` | Booking service only | Confirm active hold; seats become SOLD |
@@ -39,6 +41,10 @@ Response concept: `bookingId`, a generated `holdId`, held seat details (`seatId`
 
 Booking stores only the returned `holdId` and price snapshots. Inventory owns the seat rows and
 performs `AVAILABLE → HELD → SOLD` or `HELD → AVAILABLE` transitions.
+
+`POST /internal/events/{eventId}/seats` request concept: `seats`, a list of `{ label, section, priceCents }`. Inventory creates all seats in one transaction as `AVAILABLE`. If the event already has seats, nothing changes and the call succeeds with `200`, so retrying publish is safe; a first provisioning returns `201`. Invalid input (empty list, duplicate labels, negative price) returns `400`. This route does not check the event status, because Catalog calls it before changing the status to `PUBLISHED`. Admins no longer create, update or delete seats through the API; Catalog is the only seat source.
+
+Event check on holds: before creating a hold, Inventory calls Catalog `GET /api/events/{eventId}` and rejects the hold if the event is not found (that is, not `PUBLISHED`). The check runs before the hold transaction starts and uses bounded timeouts, so it does not extend database locks. If Catalog is unavailable, the hold request returns `503`.
 
 ## Booking Service — port 8083
 
