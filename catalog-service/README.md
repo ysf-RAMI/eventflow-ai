@@ -57,7 +57,7 @@ Initial schema: `src/main/resources/db/migration/V1__create_events.sql`. No sche
 
 ```bash
 docker compose up -d catalog-db
-cd services/catalog-service
+cd catalog-service
 mvn spring-boot:run
 ```
 

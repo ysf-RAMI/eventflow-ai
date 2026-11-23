@@ -4,25 +4,25 @@ Roles are ownership areas, not silos. Every member reviews at least one pull req
 
 ## Role 1 — Catalog, Inventory and Booking
 
-- Owns: `services/catalog-service`, `services/inventory-service`, `services/booking-service`.
+- Owns: `catalog-service`, `inventory-service`, `booking-service`.
 - Responsible for: Event CRUD, seat inventory, atomic holds, expiry, Booking state machine, REST Saga orchestration, concurrency tests.
 - Key success measure: no double hold and no confirmed booking without successful simulation and Inventory confirmation.
 
 ## Role 2 — Payment simulation
 
-- Owns: `services/payment-service`.
+- Owns: `payment-service`.
 - Responsible for: simulated success/failure, payment persistence, one payment result per booking, idempotent REST behavior, tests.
 - Out of scope: real provider integration, refunds, RabbitMQ, Outbox/Inbox.
 
 ## Role 3 — AI agent and RAG (later phase)
 
-- Owns: `services/ai-agent-service` and MCP integration tests.
+- Owns: the deferred AI Agent and MCP integration.
 - Responsible for: Spring AI, RAG/pgvector, allowlisted tools, user-context propagation, AI evaluation.
 - Key success measure: agent cannot confirm payment or access another customer's booking.
 
 ## Role 4 — Frontend, identity and DevOps
 
-- Owns: `frontend/angular-app`, `services/api-gateway`, Keycloak integration, `.github/workflows`, `docker-compose.yml`, infrastructure.
+- Owns: `frontend/angular-app`, the planned API Gateway, Keycloak integration, `.github/workflows`, `docker-compose.yml`, infrastructure.
 - Responsible for: Angular booking flow, JWT validation/routing, CI, containers, security baseline, observability and deployment.
 - Notification Service is deferred and is not a current delivery responsibility.
 

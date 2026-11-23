@@ -86,9 +86,9 @@ There is no real payment provider, refund table, or cross-database foreign key.
 
 ## 4. Migration locations
 
-- Catalog: `services/catalog-service/src/main/resources/db/migration/`
-- Inventory: `services/inventory-service/src/main/resources/db/migration/`
-- Booking: `services/booking-service/src/main/resources/db/migration/`
-- Payment: `services/payment-service/src/main/resources/db/migration/`
+- Catalog: `catalog-service/src/main/resources/db/migration/`
+- Inventory: `inventory-service/src/main/resources/db/migration/`
+- Booking: `booking-service/src/main/resources/db/migration/`
+- Payment: `payment-service/src/main/resources/db/migration/`
 
 The four core services have matching Spring Boot application configuration and JPA domain/persistence baselines. REST adapters and application orchestration are implemented in a later phase; migrations remain the database source of truth.

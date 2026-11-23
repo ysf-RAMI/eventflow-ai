@@ -45,7 +45,7 @@ This starts the four PostgreSQL databases for the core services. It does **not**
 The existing Inventory application skeleton can be started (requires JDK 21 and Maven):
 
 ```bash
-cd services/inventory-service
+cd inventory-service
 mvn spring-boot:run
 ```
 
@@ -65,15 +65,10 @@ docs/
   requirements/        SRS
   uml/                 Separate Mermaid UML source files (.mmd)
   classes/             Per-service Java class responsibilities and package layout
-services/
-  catalog-service/     Event catalog domain/persistence baseline
-  inventory-service/   Seat and SeatHold domain/persistence baseline
-  booking-service/     Booking domain/persistence baseline
-  payment-service/     Payment simulator domain/persistence baseline
-  ai-agent-service/    Deferred RAG / agent service
-  notification-service/Deferred notifications
-  api-gateway/         Deferred gateway
-booking-service/       Active local Booking implementation (H2, REST, Swagger)
+catalog-service/       Catalog implementation
+inventory-service/     Inventory implementation
+booking-service/       Booking implementation (H2, REST, Swagger)
+payment-service/       Payment simulator implementation
 frontend/angular-app/  Planned Angular client
 ```
 
