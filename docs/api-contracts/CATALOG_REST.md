@@ -116,7 +116,7 @@ GET /api/events?q=jazz&dateFrom=2026-12-01T00:00:00&dateTo=2026-12-31T23:59:59
 
 Publishing also provisions the event's seats. Catalog generates the seats (see "Seat provisioning on publish" in [`REST.md`](REST.md)) and sends them to Inventory before changing the status. The status becomes `PUBLISHED` only after Inventory confirms. If Inventory is unavailable, times out or rejects the request, the endpoint returns `503` and the event stays `DRAFT`. Retrying is safe: the seats are generated from the event id, and Inventory ignores a repeated provisioning request for an event that already has seats.
 
-Status: contract defined; implementation pending.
+Status: implemented. The Inventory call uses OpenFeign with a 2 second connect timeout and a 5 second read timeout (configurable in `application.yml`) and is not retried automatically. A failed provisioning returns `503` with an RFC 7807 body, and the event stays `DRAFT`.
 
 ### 4.6 Delete event
 
@@ -143,7 +143,7 @@ Invalid lifecycle transitions return `400`, following the project error baseline
 
 ## 6. Error response formats
 
-Errors raised by the service's own rules (unknown event, invalid lifecycle transition, invalid argument) are handled by `GlobalExceptionHandler` and return an RFC 7807 `ProblemDetail` (`application/problem+json`). Example, for an unknown event id:
+Errors raised by the service's own rules (unknown event, invalid lifecycle transition, invalid argument, seat provisioning failure) are handled by`GlobalExceptionHandler` and return an RFC 7807 `ProblemDetail` (`application/problem+json`). Example, for an unknown event id:
 
 ```json
 {
@@ -162,6 +162,8 @@ Clients should rely on the HTTP status code, and use the `detail` text only for 
 ## 7. Verification
 
 The six routes were verified manually with curl against a local PostgreSQL: create, update, publish (including repeat), delete (including repeat), draft hiding, search by text and date range, and the `400`/`404` cases above. No automated tests exist yet, and CI is deferred. This is not a claim of production readiness.
+
+Seat provisioning on publish was verified manually against a fake Inventory server. A successful call publishes the event and sends 70 to 100 seats to `POST /internal/events/{eventId}/seats`. Inventory not running, answering `500`, or answering slower than the read timeout each return `503` and leave the event `DRAFT`. A repeated attempt sends identical seats. Publishing an already published event returns `400` without calling Inventory. It has not been tested against the real Inventory service, whose endpoint (T-025) is not implemented yet.
 
 ## 8. Known limitations and next steps
 
