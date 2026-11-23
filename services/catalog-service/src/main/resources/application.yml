@@ -4,11 +4,11 @@ server:
 spring:
   application:
     name: catalog-service
-    cloud:
-      openfeign:
-        client:
-          config:
-            default:
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
               connect-timeout: 2000
               read-timeout: 5000
   datasource:
