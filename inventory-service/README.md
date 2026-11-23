@@ -7,7 +7,7 @@ From repository root:
 
 ```bash
 docker compose up -d inventory-db
-cd services/inventory-service
+cd inventory-service
 mvn spring-boot:run
 ```
 

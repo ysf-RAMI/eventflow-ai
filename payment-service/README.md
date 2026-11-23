@@ -48,7 +48,7 @@ Requires Java 21, Maven and the payment-db container. From the repository root:
 
 ```bash
 docker compose up -d payment-db
-cd services/payment-service
+cd payment-service
 mvn spring-boot:run
 ```
 
