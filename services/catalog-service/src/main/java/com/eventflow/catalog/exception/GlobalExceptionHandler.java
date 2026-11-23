@@ -20,6 +20,12 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler(SeatProvisioningException.class)
+    public ResponseEntity<ProblemDetail> handleSeatProvisioning(SeatProvisioningException ex) {
+        return build(HttpStatus.SERVICE_UNAVAILABLE,
+                "Inventory is unavailable or rejected the seats; the event stays DRAFT, try again later");
+    }
+
     private ResponseEntity<ProblemDetail> build(HttpStatus status, String detail) {
         return ResponseEntity.status(status).body(ProblemDetail.forStatusAndDetail(status, detail));
     }

@@ -11,7 +11,7 @@ The MVP does not process real payments, implement refunds, send notifications, o
 ## 2. Actors
 
 - **Customer:** browses events, checks availability, creates a booking, confirms a simulated payment, and views booking status.
-- **Admin:** creates, updates, publishes, and manages events and seat inventory.
+- **Admin:** creates, updates, publishes, and manages events. Publishing an event provisions its seats automatically.
 - **AI agent (later phase):** answers policy questions and uses allowlisted MCP tools under the authenticated customer's identity. It cannot confirm payment.
 - **Payment simulator:** records a simulated success/failure result; it is not a real payment provider.
 - **Keycloak:** authenticates users and supplies `CUSTOMER` / `ADMIN` roles.
@@ -30,7 +30,7 @@ The MVP does not process real payments, implement refunds, send notifications, o
 | FR-008 | A customer can cancel a `HELD` booking before payment; Booking asks Inventory to release its active hold. Cancellation of a confirmed booking and refunds are outside the MVP. | Booking + Inventory |
 | FR-009 | A customer can view only their own bookings and booking statuses. | Booking |
 | FR-010 | An admin can create, read, update, delete eligible draft events, and publish events. | Catalog |
-| FR-011 | An admin can create, read, update, and delete eligible seats for an event. | Inventory |
+| FR-011 | When an admin publishes an event, Catalog generates its seats and prices and Inventory stores them as `AVAILABLE`. If seat provisioning fails, the event stays `DRAFT`. Admins do not create, update or delete seats directly. | Catalog + Inventory |
 | FR-012 | The future AI agent answers policy questions from indexed documents with citations. | AI Agent (later) |
 | FR-013 | The future AI agent can search events and check seat availability through read-only MCP tools. | AI Agent (later) |
 | FR-014 | The future AI agent may create a booking/temporary hold only through Booking MCP tools; it cannot pay or confirm payment. | AI Agent + Booking (later) |
@@ -76,7 +76,8 @@ The MVP does not process real payments, implement refunds, send notifications, o
 - Repeated payment simulation for a booking creates one Payment record.
 - A booking cannot reach `CONFIRMED` if payment fails or the hold expires before Inventory confirmation.
 - Customer A cannot read or modify Customer B's booking.
-- Admin-only event and seat management rejects a `CUSTOMER` token.
+- Admin-only event management rejects a `CUSTOMER` token.
+- Publishing an event whose seat provisioning fails leaves it `DRAFT`; retrying publish does not create duplicate seats.
 - The core database stack starts with `docker compose up -d`.
 
 ## 8. Deferred scope
