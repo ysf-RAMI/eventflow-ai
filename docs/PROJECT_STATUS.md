@@ -54,6 +54,10 @@ authentication remain pending. This update does not establish end-to-end readine
 
 Catalog now includes Event update/delete rules, DTO records, a title and date-range search query, `EventService`, `EventRestController` and error handling. The six REST routes were verified manually with curl against a local PostgreSQL; no automated tests were added. The detailed contract is `docs/api-contracts/CATALOG_REST.md`. `ADMIN` enforcement and the real `createdBy` source (Keycloak JWT) are pending with T-050; until then `X-User-Id` is a placeholder header. MCP tools (T-013) are pending. No schema changes were needed. This update does not establish end-to-end readiness .
 
-## Catalog–Inventory seat provisioning (design change, not implemented)
+## Catalog–Inventory seat provisioning (design change)
 
 The team decided that Catalog generates an event's seats and prices when the event is published and sends them to Inventory (`POST /internal/events/{eventId}/seats`), and that Inventory checks the event is published before opening a hold. Admin seat management in Inventory is removed. See `docs/adr/0004-catalog-provisions-seats-on-publish.md`. SRS FR-011, `REST.md`, `CLASS_DESIGN.md` and `BACKLOG.md` (T-014, T-025, T-026) are updated. No code for this change exists yet. This update does not establish end-to-end readiness.
+
+## Catalog implementation follow-up (T-014)
+
+Catalog now generates an event's seats and prices on publish and sends them to Inventory through an OpenFeign client (`POST /internal/events/{eventId}/seats`, 2 second connect timeout, 5 second read timeout, no retries). If provisioning fails for any reason, `publish` returns `503` and the event stays `DRAFT`. This was verified manually against a fake Inventory server (success, connection failure, `500` and timeout); no automated tests were added and it has not been tested against the real Inventory service. Inventory's provisioning endpoint (T-025) is pending and owned by Inventory. This update does not establish end-to-end readiness.
