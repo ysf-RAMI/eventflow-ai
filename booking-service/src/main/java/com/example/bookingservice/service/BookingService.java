@@ -7,8 +7,8 @@ import com.example.bookingservice.domain.BookingItem;
 import com.example.bookingservice.domain.BookingStatus;
 import com.example.bookingservice.dto.BookingItemRequest;
 import com.example.bookingservice.dto.CreateBookingRequest;
-import com.example.bookingservice.inventory.InventoryClient;
-import com.example.bookingservice.payment.PaymentClient;
+import com.example.bookingservice.feign.InventoryServiceRestClient;
+import com.example.bookingservice.feign.PaymentServiceRestClient;
 import com.example.bookingservice.repository.BookingItemRepository;
 import com.example.bookingservice.repository.BookingRepository;
 import org.springframework.stereotype.Service;
@@ -24,20 +24,20 @@ import java.util.UUID;
 public class BookingService {
 
     private final BookingRepository bookingRepository;
-    private final InventoryClient inventoryClient;
-    private final PaymentClient paymentClient;
+    private final InventoryServiceRestClient inventoryServiceRestClient;
+    private final PaymentServiceRestClient paymentServiceRestClient;
     private final BookingItemRepository bookingItemRepository;
 
     public BookingService(
             BookingRepository bookingRepository,
-            InventoryClient inventoryClient,
-            PaymentClient paymentClient,
+            InventoryServiceRestClient inventoryServiceRestClient,
+            PaymentServiceRestClient paymentServiceRestClient,
             BookingItemRepository bookingItemRepository
     ) {
         this.bookingRepository = bookingRepository;
-        this.inventoryClient = inventoryClient;
-        this.paymentClient = paymentClient;
+        this.paymentServiceRestClient = paymentServiceRestClient;
         this.bookingItemRepository = bookingItemRepository;
+        this.inventoryServiceRestClient = inventoryServiceRestClient;
     }
     
 
@@ -78,46 +78,65 @@ public class BookingService {
         }
         booking.setTotalCents(totalCents);
 
-        List<InventoryClient.SeatStatus> statuses = inventoryClient.getSeatStatuses(booking.getEventId(), seatIds);
+        InventoryServiceRestClient.StatusRequest statusRequest =
+                new InventoryServiceRestClient.StatusRequest(booking.getEventId(), seatIds);
+        List<InventoryServiceRestClient.SeatStatus> statuses =
+                inventoryServiceRestClient.getSeatStatuses(statusRequest);
         if (statuses.size() != seatIds.size()) {
             throw new IllegalStateException("Inventory returned an invalid seat status response");
         }
-        for (InventoryClient.SeatStatus status : statuses) {
-            if (status != InventoryClient.SeatStatus.AVAILABLE) {
+        for (InventoryServiceRestClient.SeatStatus status : statuses) {
+            if (status != InventoryServiceRestClient.SeatStatus.AVAILABLE) {
                 throw new IllegalStateException("One or more selected seats are unavailable");
             }
         }
 
         Instant expiresAt = Instant.now().plusSeconds(900);
-        InventoryClient.HoldResponse hold = inventoryClient.holdSeats(booking.getEventId(), seatIds, expiresAt);
-        booking.setInventoryHoldId(hold.holdId());
-        booking.setHoldExpiresAt(hold.expiresAt());
-        booking.setStatus(BookingStatus.HELD);
+        booking.setStatus(BookingStatus.PENDING);
         booking.setCreatedAt(Instant.now());
+        Booking pendingBooking = bookingRepository.save(booking);
+        InventoryServiceRestClient.HoldRequest holdRequest =
+                new InventoryServiceRestClient.HoldRequest(
+                        pendingBooking.getId(),
+                        booking.getEventId(),
+                        seatIds,
+                        expiresAt
+                );
+        InventoryServiceRestClient.HoldResponse hold =
+                inventoryServiceRestClient.holdSeats(holdRequest);
+        pendingBooking.setInventoryHoldId(hold.holdId());
+        pendingBooking.setHoldExpiresAt(hold.expiresAt());
+        pendingBooking.setStatus(BookingStatus.HELD);
+        bookingRepository.save(pendingBooking);
 
         boolean holdActive = true;
         try {
-            Booking heldBooking = bookingRepository.save(booking);
+            Booking heldBooking = pendingBooking;
             for (BookingItem item : bookingItems) {
                 item.setBookingId(heldBooking.getId());
                 bookingItemRepository.save(item);
             }
-            PaymentClient.PaymentResponse payment =
-                    paymentClient.charge(heldBooking.getId(), heldBooking.getTotalCents());
-            if (!payment.successful()) {
-                inventoryClient.releaseHold(hold.holdId());
+            PaymentServiceRestClient.SimulatePaymentRequest paymentRequest =
+                    new PaymentServiceRestClient.SimulatePaymentRequest(
+                            heldBooking.getId(),
+                            heldBooking.getTotalCents()
+                    );
+            PaymentServiceRestClient.PaymentResponse payment =
+                    paymentServiceRestClient.simulate(paymentRequest);
+            if (payment.status() != PaymentServiceRestClient.PaymentStatus.SUCCEEDED) {
+                inventoryServiceRestClient.releaseHold(heldBooking.getId());
                 holdActive = false;
                 heldBooking.setStatus(BookingStatus.FAILED);
                 return bookingRepository.save(heldBooking);
             }
 
-            inventoryClient.confirmHold(hold.holdId());
+            inventoryServiceRestClient.confirmHold(heldBooking.getId());
             holdActive = false;
             heldBooking.setStatus(BookingStatus.CONFIRMED);
             return bookingRepository.save(heldBooking);
         } catch (RuntimeException exception) {
             if (holdActive) {
-                inventoryClient.releaseHold(hold.holdId());
+                inventoryServiceRestClient.releaseHold(pendingBooking.getId());
             }
             throw exception;
         }
@@ -166,32 +185,10 @@ public class BookingService {
         }
         Booking booking = result.get();
         if (booking.getStatus() == BookingStatus.HELD && booking.getInventoryHoldId() != null) {
-            inventoryClient.releaseHold(booking.getInventoryHoldId());
+            inventoryServiceRestClient.releaseHold(booking.getId());
         }
         booking.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
-    }
-
-    public InventoryClient.HoldResponse holdSeats(
-            UUID eventId,
-            List<UUID> seatIds,
-            Instant expiresAt
-    ) {
-        return inventoryClient.holdSeats(eventId, seatIds, expiresAt);
-    }
-
-    public void releaseSeatHold(UUID holdId) {
-        if (holdId == null) {
-            throw new IllegalArgumentException("hold ID is required");
-        }
-        inventoryClient.releaseHold(holdId);
-    }
-
-    public void confirmSeatHold(UUID holdId) {
-        if (holdId == null) {
-            throw new IllegalArgumentException("hold ID is required");
-        }
-        inventoryClient.confirmHold(holdId);
     }
 
     public Optional<Booking> findByInventoryHoldId(UUID inventoryHoldId) {

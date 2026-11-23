@@ -11,7 +11,7 @@ EventFlow AI is a distributed event-reservation platform with an AI booking assi
 | API Gateway | 8080 | none | Planned; JWT validation and routing |
 | Catalog Service | 8081 | `catalog_db` (5432) | Spring Boot domain/persistence baseline |
 | Inventory Service | 8082 | `inventory_db` (5433) | Existing Seat skeleton; SeatHold design and migration added |
-| Booking Service | 8083 | `booking_db` (5434) | Spring Boot domain/persistence baseline |
+| Booking Service | 8083 | `booking_db` (5434) | Architecture baseline; local implementation available in `booking-service/` |
 | Payment Service | 8084 | `payment_db` (5435) | Simulation REST endpoints and persistence |
 | AI Agent Service | 8085 | `ai_db` (5436, future) | Later phase: RAG and controlled MCP tools |
 | Notification Service | 8086 | none initially | Deferred; no notification implementation in MVP |
@@ -73,8 +73,29 @@ services/
   ai-agent-service/    Deferred RAG / agent service
   notification-service/Deferred notifications
   api-gateway/         Deferred gateway
+booking-service/       Active local Booking implementation (H2, REST, Swagger)
 frontend/angular-app/  Planned Angular client
 ```
+
+### Local Booking service quick start
+
+The active local implementation is at the repository root in `booking-service/`:
+
+```bash
+cd booking-service
+./mvnw spring-boot:run
+```
+
+On Windows, use `mvnw.cmd spring-boot:run`.
+
+- API base URL: http://localhost:8081
+- Swagger UI: http://localhost:8081/swagger-ui.html
+- OpenAPI JSON: http://localhost:8081/v3/api-docs
+- H2 console: http://localhost:8081/h2-console
+
+The local service uses a file-backed H2 database at `./data/bookingdb`, Spring profiles,
+and temporary local Inventory and Payment clients. The production target remains
+PostgreSQL, separate Booking/Inventory/Payment services, and REST communication.
 
 ## 5. Design rules
 
@@ -105,13 +126,26 @@ frontend/angular-app/  Planned Angular client
 
 ## 7. Current implementation boundary
 
-This alignment includes domain entities, repositories, Flyway migrations, and application configuration for the four core services. Payment REST endpoints are implemented. Other REST controllers, Keycloak enforcement, inter-service clients, and end-to-end orchestration remain the next implementation phase. Do not add or run tests as part of this update task; existing test files are preserved unchanged. Compilation, runtime, Flyway, and end-to-end validation are not performed here.
+The repository architecture includes domain entities, repositories, migrations, and application
+configuration baselines for the core services. The Payment simulator is also implemented.
+
+The root `booking-service/` is the active local Booking implementation. It provides:
+
+- REST endpoints for creating, listing, retrieving, filtering, and cancelling bookings.
+- Swagger/OpenAPI documentation.
+- UUID-based Booking and BookingItem persistence.
+- A local 15-minute Inventory hold simulation.
+- Simulated payment followed by hold confirmation or release.
+- No cross-service JPA relationships.
+
+Keycloak enforcement, production REST clients, PostgreSQL/Flyway runtime configuration, and
+end-to-end orchestration remain for the next implementation phase. Notification and AI Agent
+implementation are deferred. Existing test files are preserved unchanged.
 
 See [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for the current status and [AGENT_PROMPT.md](AGENT_PROMPT.md) for the repository-update instructions.
 
 ## 8. Git workflow
 
-- `main`: stable milestones.
-- `develop`: integration branch.
+- `master`: current integration branch.
 - `feature/<task-id>-short-name`: feature work.
 - Use Conventional Commits and reference the task ID, e.g. `feat(inventory): T-021 add seat hold model`.
