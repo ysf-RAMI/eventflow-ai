@@ -19,6 +19,7 @@ Create GitHub issues from these tasks and keep the task ID in each title. The cu
 | T-011 | Event entity and EventStatus | Role 1 | T-010 | Event has id, createdBy, title, description, date, status only |
 | T-012 | Event REST CRUD and publish operations | Role 1 | T-011 | REST contract and service responsibilities are implemented |
 | T-013 | Read-only Catalog MCP tools (later AI phase) | Role 3 | T-012 | Tools call the same application service and are read-only |
+| T-014 | Catalog seat generation on publish and Inventory client | Role 1 | T-012, T-025 | Publish generates 70–100 seats with random prices, sends them to Inventory, and sets PUBLISHED only after Inventory confirms; Inventory failure returns 503 and the event stays DRAFT |
 
 ## Phase 2 — Inventory Service
 
@@ -29,6 +30,8 @@ Create GitHub issues from these tasks and keep the task ID in each title. The cu
 | T-022 | Atomic multi-seat hold, confirm and release REST endpoints | Role 1 | T-021 | All-or-nothing hold behavior is implemented |
 | T-023 | Hold expiry mechanism | Role 1 | T-022 | Expired holds are marked EXPIRED and seats return to AVAILABLE |
 | T-024 | Read-only Inventory MCP tools (later AI phase) | Role 3 | T-022 | MCP tools cannot create/confirm/release holds |
+| T-025 | Inventory seat provisioning endpoint (called by Catalog) | Role 1 | T-020 | Idempotent POST /internal/events/{eventId}/seats creates seats as AVAILABLE; admin seat create/update/delete routes are not implemented |
+| T-026 | Inventory published-event check before holds | Role 1 | T-012, T-022 | Hold requests for unknown or unpublished events are rejected; Catalog outage returns 503 |
 
 ## Phase 3 — Booking Service
 

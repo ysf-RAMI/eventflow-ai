@@ -22,10 +22,14 @@ This document is the class-level implementation guide. It describes ownership an
 
 ### Application and adapters
 - `EventRepository`: persistence for Event.
-- `EventService`: create, update, publish, delete eligible draft events, list/search, get details.
+- `EventService`: create, update, publish (provisions seats in Inventory before changing the status), delete eligible draft events, list/search, get details.
 - `EventRestController`: admin CRUD and event read endpoints.
 - `EventMcpTools`: read-only search/details tools for the future AI agent.
 - DTO records: `CreateEventRequest`, `UpdateEventRequest`, `EventResponse`.
+- `SeatGenerator`: generates an event's seats. The count is a random whole number from 70 to 100, each price is a random whole number from 100 to 1000 currency units converted to `priceCents`, and the generator is seeded from the event id so a retry produces identical seats.
+- `InventoryClient`: OpenFeign client for Inventory `POST /internal/events/{eventId}/seats`; timeouts are set in `application.yml`. `EventService.publish` wraps any `FeignException` in `SeatProvisioningException`.
+- `SeatProvisioningException`: handled by `GlobalExceptionHandler` as `503`.
+- Provisioning DTO records: `ProvisionSeatsRequest`, `SeatSpec`.
 - `EventNotFoundException`, `GlobalExceptionHandler`: error handling (404 / 400).
 
 ### Suggested package layout
@@ -42,6 +46,11 @@ catalog/
   dto/EventResponse.java
   exception/EventNotFoundException.java
   exception/GlobalExceptionHandler.java
+  service/SeatGenerator.java
+  client/InventoryClient.java
+  dto/ProvisionSeatsRequest.java
+  dto/SeatSpec.java
+  exception/SeatProvisioningException.java
 ```
 
 `Event.date` is one `LocalDateTime` property stored as `event_date`. Do not reintroduce venue fields, start/end fields, cancellation policy, or event audit timestamps in the approved MVP entity.
@@ -57,12 +66,13 @@ catalog/
 ### Application and adapters
 - `SeatRepository`: persistence and lookup of seats.
 - `SeatHoldRepository`: persistence and lookup of holds.
-- `SeatService`: create/update/list/delete eligible seats and availability queries.
-- `SeatHoldService`: atomically hold all requested seats, confirm active holds, release active holds.
+- `SeatService`: provision seats for an event (idempotent: if the event already has seats, nothing changes), list seats and availability queries. Admins no longer update or delete seats.
+- `SeatHoldService`: atomically hold all requested seats, confirm active holds, release active holds. Before the hold transaction starts, it asks `CatalogClient` whether the event is published.
+- `CatalogClient` (planned): calls Catalog `GET /api/events/{eventId}` with bounded timeouts. A missing event is rejected; an unavailable Catalog returns `503`.
 - `HoldExpiryScheduler`: expire due holds and return their seats to `AVAILABLE`.
 - `InventoryRestController`: public seat/availability routes and internal hold routes.
 - `InventoryMcpTools`: read-only availability and seat detail tools.
-- DTO records: `CreateSeatRequest`, `UpdateSeatRequest`, `SeatResponse`, `AvailabilityResponse`, `CreateHoldRequest`, `HoldResponse`.
+- DTO records: `ProvisionSeatsRequest`, `SeatSpec`, `SeatResponse`, `AvailabilityResponse`, `CreateHoldRequest`, `HoldResponse`.
 
 ### Suggested package layout
 ```text
@@ -76,6 +86,7 @@ inventory/
   service/SeatService.java
   service/SeatHoldService.java
   service/HoldExpiryScheduler.java
+  client/CatalogClient.java                 (planned)
   controller/rest/InventoryRestController.java
   controller/mcp/InventoryMcpTools.java
   dto/*.java

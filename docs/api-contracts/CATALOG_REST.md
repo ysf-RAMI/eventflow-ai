@@ -52,7 +52,7 @@ DRAFT ──publish──▶ PUBLISHED
 | GET | `/api/events` | Public | `200` | Search published events |
 | GET | `/api/events/{eventId}` | Public | `200` | Get a published event |
 | PUT | `/api/events/{eventId}` | ADMIN | `200` | Update a draft event |
-| POST | `/api/events/{eventId}/publish` | ADMIN | `200` | Publish a draft event |
+| POST | `/api/events/{eventId}/publish` | ADMIN | `200` | Publish a draft event and provision its seats |
 | DELETE | `/api/events/{eventId}` | ADMIN | `204` | Delete a draft event |
 
 ## 4. Operations
@@ -112,13 +112,17 @@ GET /api/events?q=jazz&dateFrom=2026-12-01T00:00:00&dateTo=2026-12-31T23:59:59
 
 ### 4.5 Publish event
 
-`POST /api/events/{eventId}/publish` takes no body and returns the event with status `PUBLISHED`. The event must be `DRAFT`. Publishing is not idempotent: repeating the call returns `400`.
+`POST /api/events/{eventId}/publish` takes no body and returns the event with status `PUBLISHED`. The event must be `DRAFT`. Publishing is not idempotent: repeating the call after success returns `400`.
+
+Publishing also provisions the event's seats. Catalog generates the seats (see "Seat provisioning on publish" in [`REST.md`](REST.md)) and sends them to Inventory before changing the status. The status becomes `PUBLISHED` only after Inventory confirms. If Inventory is unavailable, times out or rejects the request, the endpoint returns `503` and the event stays `DRAFT`. Retrying is safe: the seats are generated from the event id, and Inventory ignores a repeated provisioning request for an event that already has seats.
+
+Status: implemented. The Inventory call uses OpenFeign with a 2 second connect timeout and a 5 second read timeout (configurable in `application.yml`) and is not retried automatically. A failed provisioning returns `503` with an RFC 7807 body, and the event stays `DRAFT`.
 
 ### 4.6 Delete event
 
 `DELETE /api/events/{eventId}` returns `204` with no body. The event must be `DRAFT`. A second delete of the same id returns `404`.
 
-The Catalog Service does not call Inventory or Booking during deletion. It relies on the `DRAFT`-only lifecycle rule; cross-service consistency and deletion constraints remain integration considerations.
+The Catalog Service does not call Inventory or Booking during deletion. Drafts normally have no seats, because seats are provisioned on publish, so the `DRAFT`-only rule is sufficient. In the rare case where seats were stored but the status change failed, the event stays `DRAFT` and deleting it leaves unused seats in Inventory; cross-service cleanup is not part of the MVP.considerations.
 
 ## 5. Error matrix
 
@@ -130,6 +134,7 @@ The Catalog Service does not call Inventory or Booking during deletion. It relie
 | GET `/api/events/{eventId}` | Unknown id, or event is a draft | `404` |
 | PUT `/api/events/{eventId}` | Invalid body; malformed UUID; event is not `DRAFT` | `400` |
 | POST `/api/events/{eventId}/publish` | Malformed UUID; event is not `DRAFT` | `400` |
+| POST `/api/events/{eventId}/publish` | Inventory unavailable, timed out or rejected seat provisioning | `503` |
 | DELETE `/api/events/{eventId}` | Malformed UUID; event is not `DRAFT` | `400` |
 | PUT, publish, DELETE | Unknown id | `404` |
 | Any | Unexpected failure | `500` |
@@ -138,7 +143,7 @@ Invalid lifecycle transitions return `400`, following the project error baseline
 
 ## 6. Error response formats
 
-Errors raised by the service's own rules (unknown event, invalid lifecycle transition, invalid argument) are handled by `GlobalExceptionHandler` and return an RFC 7807 `ProblemDetail` (`application/problem+json`). Example, for an unknown event id:
+Errors raised by the service's own rules (unknown event, invalid lifecycle transition, invalid argument, seat provisioning failure) are handled by`GlobalExceptionHandler` and return an RFC 7807 `ProblemDetail` (`application/problem+json`). Example, for an unknown event id:
 
 ```json
 {
@@ -158,6 +163,8 @@ Clients should rely on the HTTP status code, and use the `detail` text only for 
 
 The six routes were verified manually with curl against a local PostgreSQL: create, update, publish (including repeat), delete (including repeat), draft hiding, search by text and date range, and the `400`/`404` cases above. No automated tests exist yet, and CI is deferred. This is not a claim of production readiness.
 
+Seat provisioning on publish was verified manually against a fake Inventory server. A successful call publishes the event and sends 70 to 100 seats to `POST /internal/events/{eventId}/seats`. Inventory not running, answering `500`, or answering slower than the read timeout each return `503` and leave the event `DRAFT`. A repeated attempt sends identical seats. Publishing an already published event returns `400` without calling Inventory. It has not been tested against the real Inventory service, whose endpoint (T-025) is not implemented yet.
+
 ## 8. Known limitations and next steps
 
 - No authentication or role enforcement; `X-User-Id` is a placeholder (T-050).
@@ -165,3 +172,5 @@ The six routes were verified manually with curl against a local PostgreSQL: crea
 - No endpoints for `CANCELLED` or `COMPLETED`.
 - Error body shape differs between domain errors and some framework errors.
 - Read-only MCP tools for the AI agent (T-013) will reuse `EventService`. Administrative operations stay REST-only.
+- Seat provisioning on publish is a synchronous call to Inventory; Catalog does not retry automatically, and the admin retries publish after a failure.
+- Internal routes have no service authentication until T-050.
