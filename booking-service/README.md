@@ -86,6 +86,21 @@ Swagger UI: `http://localhost:8081/swagger-ui.html`
 
 OpenAPI JSON: `http://localhost:8081/v3/api-docs`
 
+## MCP server
+
+The Booking MCP server is available at `http://localhost:8081/mcp`.
+
+The following read-only tools are exposed with `@McpTool` and `@McpToolParam`:
+
+| MCP tool | Parameters | Purpose |
+|---|---|---|
+| `getMyBookings` | `customerId` | List bookings for one customer |
+| `getBookingStatus` | `bookingId` | Get one booking status |
+
+The MCP tools reuse `BookingService`. They do not expose payment, hold confirmation,
+hold release, or booking cancellation operations. Booking MCP therefore cannot simulate
+payment or confirm a booking directly.
+
 ## Inventory REST contract
 
 Inventory base URL: `http://localhost:8082`

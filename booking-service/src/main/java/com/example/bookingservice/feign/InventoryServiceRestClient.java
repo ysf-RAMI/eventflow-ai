@@ -11,7 +11,8 @@ import java.util.List;
 import java.util.UUID;
 
 @FeignClient(
-        name = "inventory-service"
+        name = "inventory-service",
+        url = "${inventory-service.url:http://localhost:8082}"
 )
 public interface InventoryServiceRestClient {
 
