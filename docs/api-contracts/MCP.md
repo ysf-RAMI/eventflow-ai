@@ -15,9 +15,11 @@ MCP is a tool interface for the future AI Agent Service. It is not a replacement
 
 ## Booking MCP tools — authenticated customer context
 
-- `createBooking(eventId, seatIds)` — creates a Booking and requests an Inventory hold; it does not pay.
-- `getMyBookings()` — returns only bookings belonging to the authenticated customer.
-- `getBookingStatus(bookingId)` — ownership check is mandatory.
+- `getMyBookings(customerId)` — returns only bookings belonging to the specified customer.
+- `getBookingStatus(bookingId)` — reads one booking and validates that it exists.
+
+The local Booking implementation currently exposes these tools through Spring AI at
+`POST /mcp`. The `createBooking`, `payBooking`, and confirmation operations remain REST-only.
 
 ## Prohibited tools
 

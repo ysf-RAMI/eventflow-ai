@@ -10,7 +10,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 @FeignClient(
-        name = "payment-service"
+        name = "payment-service",
+        url = "${payment-service.url:http://localhost:8084}"
 )
 public interface PaymentServiceRestClient {
 
