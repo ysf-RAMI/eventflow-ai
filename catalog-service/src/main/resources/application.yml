@@ -9,8 +9,16 @@ spring:
       client:
         config:
           default:
-              connect-timeout: 2000
-              read-timeout: 5000
+            connect-timeout: 2000
+            read-timeout: 5000
+  ai:
+    mcp:
+      server:
+        name: catalog-mcp-server
+        version: 0.1.0
+        protocol: STREAMABLE
+        streamable-http:
+          mcp-endpoint: /mcp
   datasource:
     url: jdbc:postgresql://localhost:5432/catalog_db
     username: eventflow
@@ -27,7 +35,6 @@ management:
     web:
       exposure:
         include: health,info
-
 
 inventory:
   base-url: http://localhost:8082
