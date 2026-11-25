@@ -4,7 +4,7 @@ This document is the class-level implementation guide. It describes ownership an
 
 ## Global conventions
 
-- Java 21 and Spring Boot 3.3.
+- Java 21. Spring Boot 3.3 for Inventory and Payment; Catalog and Booking use Spring Boot 4.1.
 - JPA entities are regular Java classes.
 - Request/response DTOs are Java `record` types.
 - Enums are Java enums, not separate database tables.
@@ -24,7 +24,7 @@ This document is the class-level implementation guide. It describes ownership an
 - `EventRepository`: persistence for Event.
 - `EventService`: create, update, publish (provisions seats in Inventory before changing the status), delete eligible draft events, list/search, get details.
 - `EventRestController`: admin CRUD and event read endpoints.
-- `EventMcpTools`: read-only search/details tools for the future AI agent.
+- `EventMcpTools`: read-only `searchEvents` and `getEventDetails` tools, served at `/mcp` by the Spring AI MCP server starter; they call `EventService`.
 - DTO records: `CreateEventRequest`, `UpdateEventRequest`, `EventResponse`.
 - `SeatGenerator`: generates an event's seats. The count is a random whole number from 70 to 100, each price is a random whole number from 100 to 1000 currency units converted to `priceCents`, and the generator is seeded from the event id so a retry produces identical seats.
 - `InventoryClient`: OpenFeign client for Inventory `POST /internal/events/{eventId}/seats`; timeouts are set in `application.yml`. `EventService.publish` wraps any `FeignException` in `SeatProvisioningException`.

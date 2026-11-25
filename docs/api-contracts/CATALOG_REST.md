@@ -171,6 +171,6 @@ Seat provisioning on publish was verified manually against a fake Inventory serv
 - Search is not paginated.
 - No endpoints for `CANCELLED` or `COMPLETED`.
 - Error body shape differs between domain errors and some framework errors.
-- Read-only MCP tools for the AI agent (T-013) will reuse `EventService`. Administrative operations stay REST-only.
+- Read-only MCP tools (T-013) are served at `/mcp` and reuse `EventService`; see [`MCP.md`](MCP.md). Administrative operations stay REST-only.
 - Seat provisioning on publish is a synchronous call to Inventory; Catalog does not retry automatically, and the admin retries publish after a failure.
 - Internal routes have no service authentication until T-050.

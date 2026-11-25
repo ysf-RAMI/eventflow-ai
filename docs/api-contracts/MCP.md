@@ -4,8 +4,16 @@ MCP is a tool interface for the future AI Agent Service. It is not a replacement
 
 ## Catalog MCP tools — read only
 
-- `searchEvents(query, dateFrom?, dateTo?)`
+- `searchEvents(query?, dateFrom?, dateTo?)`
 - `getEventDetails(eventId)`
+
+Implemented in `catalog-service` (T-013) as `EventMcpTools`. The Catalog service hosts an MCP server over Streamable HTTP at `http://localhost:8081/mcp` (Spring AI MCP server starter, protocol `STREAMABLE`). Both tools are marked read-only and call `EventService`, the same service layer as the REST API, so they follow the same rules: only `PUBLISHED` events are returned, and a draft or unknown event is reported as an error.
+
+- `searchEvents`: all parameters are optional. `query` is a case-insensitive title match. `dateFrom` and `dateTo` are ISO date-time strings such as `2026-12-01T00:00:00`, inclusive. Returns a list of events (`id`, `createdBy`, `title`, `description`, `date`, `status`) ordered by date, soonest first. It is not paginated.
+- `getEventDetails`: `eventId` is a UUID string. Returns one event.
+- Invalid input (a bad UUID, a bad date, or `dateFrom` after `dateTo`) and an unknown or draft event are reported as errors, and the server keeps working.
+
+The endpoint has no authentication until T-050. It exposes the same public data as `GET /api/events`, so do not route `/mcp` publicly before authentication exists. No write tools exist, and `tools/list` returns exactly these two tools. Verified manually with a JSON-RPC script (initialize, tools/list, tools/call); there is no automated test.
 
 ## Inventory MCP tools — read only
 
