@@ -2,7 +2,7 @@
 
 EventFlow AI is a distributed event-reservation platform with an AI booking assistant planned for a later phase. The MVP focuses on event management, seat availability, temporary seat holds, booking orchestration, and a simulated payment flow.
 
-> **Architecture baseline:** Java 21, Spring Boot 3.3, PostgreSQL 16, REST between services, Keycloak for identity, and MCP tools for authorized AI access when the AI phase is implemented. RabbitMQ is not used in this project. Notifications are deferred.
+> **Architecture baseline:** Java 21, Spring Boot 3.3 (Catalog and Booking use 4.1), PostgreSQL 16, REST between services, Keycloak for identity, and MCP tools for authorized AI access when the AI phase is implemented. RabbitMQ is not used in this project. Notifications are deferred.
 
 ## 1. Services and current status
 
