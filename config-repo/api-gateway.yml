@@ -1,0 +1,23 @@
+# Gateway settings served by config-server.
+
+eventflow:
+  security:
+    # Set to true once Keycloak is running (task T-050).
+    jwt-enabled: false
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/eventflow}
+
+management:
+  endpoint:
+    gateway:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        # Overrides the shared list so /actuator/gateway/routes stays available.
+        include: health,info,gateway

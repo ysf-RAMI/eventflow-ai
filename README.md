@@ -8,7 +8,9 @@ EventFlow AI is a distributed event-reservation platform with an AI booking assi
 
 | Component | Port | Database | Scope / status |
 |---|---:|---|---|
-| API Gateway | 8080 | none | Planned; JWT validation and routing |
+| Discovery Service (Eureka) | 8761 | none | Service registry in `discovery-service/` |
+| Config Server | 8888 | none | Serves `config-repo/` (native profile) in `config-server/` |
+| API Gateway | 8080 | none | Routing via Eureka in `api-gateway/`; Keycloak JWT check behind a flag (T-050) |
 | Catalog Service | 8081 | `catalog_db` (5432) | Spring Boot domain/persistence baseline |
 | Inventory Service | 8082 | `inventory_db` (5433) | Existing Seat skeleton; SeatHold design and migration added |
 | Booking Service | 8083 | `booking_db` (5434) | Architecture baseline; local implementation available in `booking-service/` |
@@ -91,6 +93,32 @@ On Windows, use `mvnw.cmd spring-boot:run`.
 The local service uses a file-backed H2 database at `./data/bookingdb`, Spring profiles,
 and temporary local Inventory and Payment clients. The production target remains
 PostgreSQL, separate Booking/Inventory/Payment services, and REST communication.
+
+### Infrastructure services quick start
+
+Start them in this order, from the repository root (so the config server finds `config-repo/`):
+
+```bash
+mvn -f discovery-service/pom.xml spring-boot:run   # http://localhost:8761 (Eureka dashboard)
+mvn -f config-server/pom.xml spring-boot:run       # http://localhost:8888/api-gateway/default
+mvn -f api-gateway/pom.xml spring-boot:run         # http://localhost:8080/actuator/gateway/routes
+```
+
+Gateway routes (resolved through Eureka by `spring.application.name`):
+
+| Path | Service |
+|---|---|
+| `/api/events/**` | `catalog-service` |
+| `/api/inventory/**`, `/api/seats/**`, `/api/holds/**` | `inventory-service` |
+| `/api/bookings/**` | `booking-service` |
+| `/internal/**` | blocked at the gateway (Payment is internal) |
+
+For a business service to be reachable through the gateway, it must register with Eureka:
+add `spring-cloud-starter-netflix-eureka-client` (and optionally `spring-cloud-starter-config`
+with `spring.config.import: optional:configserver:http://localhost:8888`) to its `pom.xml`.
+
+JWT validation is off by default for local testing. Set `eventflow.security.jwt-enabled: true`
+in `config-repo/api-gateway.yml` once Keycloak runs; `KEYCLOAK_ISSUER_URI` sets the realm.
 
 ## 5. Design rules
 
