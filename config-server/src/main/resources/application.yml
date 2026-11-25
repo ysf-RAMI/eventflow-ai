@@ -1,0 +1,28 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-server
+  profiles:
+    # "native" serves files from the local config-repo/ folder (no Git remote needed).
+    active: native
+  cloud:
+    config:
+      server:
+        native:
+          # Works when started from the repository root or from config-server/.
+          search-locations: file:./config-repo/,file:../config-repo/
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
