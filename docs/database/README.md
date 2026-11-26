@@ -10,7 +10,7 @@
 | Payment | `payment_db` | 5435 | `payment` | Payment Service |
 | AI Agent (later) | `ai_db` | 5436 (future) | `policy_document`, `document_chunk` | AI Agent Service |
 
-The first four databases are defined in the current `docker-compose.yml`. `ai_db` is deferred until the AI/RAG phase.
+All five databases are defined in the current `docker-compose.yml`. `ai_db` uses the `pgvector/pgvector:pg16` image and currently holds only the `vector` extension; the `policy_document` and `document_chunk` tables are created in the RAG task (T-065).
 
 ## 2. Table definitions
 

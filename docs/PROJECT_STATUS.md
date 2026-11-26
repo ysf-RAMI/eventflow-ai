@@ -25,7 +25,8 @@ This branch contains the corrected architecture, database, and core domain/persi
 - Catalog has the Event domain model, repository, application skeleton, migration, and PostgreSQL configuration.
 - Booking has the Booking and BookingItem domain models, repositories, application skeleton, migration, and PostgreSQL configuration.
 - Payment has the Payment domain model, repository, application skeleton, migration, and PostgreSQL configuration.
-- API Gateway, Angular, AI Agent, and Notification are planned/deferred components.
+- API Gateway, Angular, AI Agent, and Notification are planned/deferred components. The AI Agent has a skeleton (T-060).
+
 
 ## Tests and verification
 
@@ -65,3 +66,7 @@ Catalog now generates an event's seats and prices on publish and sends them to I
 ## Catalog implementation follow-up (T-013)
 
 Catalog now hosts read-only MCP tools (`searchEvents`, `getEventDetails`) at `/mcp`, using the Spring AI MCP server starter over Streamable HTTP. The tools call `EventService` and return published events only. To use the starter, Catalog was upgraded to Spring Boot 4.1.2 and Spring Cloud 2025.1.5, the same versions Booking uses; the existing REST and seat-provisioning checks were rerun and passed after the upgrade. A JSON-RPC script verified the tool list, searches, details and error cases; no automated tests were added. The `/mcp` endpoint has no authentication until T-050. The Inventory and Booking MCP tools are not implemented. This update does not establish end-to-end readiness.
+
+## AI Agent skeleton (T-060)
+
+`ai-agent-service` now exists as a Spring Boot 4.1 skeleton on port 8085 with its own `ai_db` (PostgreSQL 16 with pgvector, port 5436). Flyway applies one migration that installs the `vector` extension. Verified manually: the application starts, health is UP, and the extension is installed. There are no endpoints, LLM calls, tools or tests yet. Groq is the agreed LLM provider (ADR 0005); linking a Telegram chat to a customer is not designed yet. This update does not establish end-to-end readiness.
