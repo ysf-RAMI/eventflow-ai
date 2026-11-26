@@ -1,0 +1,18 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: ai-agent-service
+  datasource:
+    url: jdbc:postgresql://localhost:5436/ai_db
+    username: eventflow
+    password: eventflow_dev
+  flyway:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
