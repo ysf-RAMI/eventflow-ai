@@ -70,3 +70,7 @@ Catalog now hosts read-only MCP tools (`searchEvents`, `getEventDetails`) at `/m
 ## AI Agent skeleton (T-060)
 
 `ai-agent-service` now exists as a Spring Boot 4.1 skeleton on port 8085 with its own `ai_db` (PostgreSQL 16 with pgvector, port 5436). Flyway applies one migration that installs the `vector` extension. Verified manually: the application starts, health is UP, and the extension is installed. There are no endpoints, LLM calls, tools or tests yet. Groq is the agreed LLM provider (ADR 0005); linking a Telegram chat to a customer is not designed yet. This update does not establish end-to-end readiness.
+
+## AI Agent chat endpoint (T-061)
+
+`ai-agent-service` now answers `POST /api/agent/chat` through a Groq model using Spring AI 2.0.2. The default model is `openai/gpt-oss-120b` (Groq retired `llama-3.3-70b-versatile` on 16 August 2026). The API key comes from the `GROQ_API_KEY` environment variable and is not committed. A blank message or one over 2000 characters returns `400`, and a model failure returns `503`. Four automated tests pass: a real Groq chat request, the two validation cases, and a simulated model failure. The real-request test needs a Groq API key. The endpoint has no authentication, conversation history or tools yet. This update does not establish end-to-end readiness.

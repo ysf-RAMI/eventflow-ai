@@ -67,6 +67,14 @@ The customer ID is derived from the authenticated Keycloak JWT subject, never ac
 
 The payment simulator does not connect to a real provider and does not move money. One unique payment record is allowed per booking. The simulator's success/failure mode is controlled by server-side configuration/test profile, not by an untrusted customer request.
 
+## AI Agent Service — port 8085
+
+| Method | Route | Access | Purpose |
+|---|---|---|---|
+| POST | `/api/agent/chat` | Open for now (authentication arrives with T-050) | Send one message and get the assistant's reply |
+
+Request: `{ "message": "text" }`. The message must not be blank and is limited to 2000 characters. Response `200`: `{ "reply": "text" }`. An invalid request returns `400`. If the language model is unavailable, times out or rejects the call, the endpoint returns `503` with an RFC 7807 body. The endpoint keeps no conversation history and has no access to events, seats or bookings yet.
+
 ## Error handling baseline
 
 - `400`: invalid request or invalid state transition.

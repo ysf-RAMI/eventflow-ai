@@ -15,7 +15,7 @@ EventFlow AI is a distributed event-reservation platform with an AI booking assi
 | Inventory Service | 8082 | `inventory_db` (5433) | Existing Seat skeleton; SeatHold design and migration added |
 | Booking Service | 8083 | `booking_db` (5434) | Architecture baseline; local implementation available in `booking-service/` |
 | Payment Service | 8084 | `payment_db` (5435) | Simulation REST endpoints and persistence |
-| AI Agent Service | 8085 | `ai_db` (5436) | Skeleton only (T-060); Groq chat, MCP tools, Telegram and RAG are next |
+| AI Agent Service | 8085 | `ai_db` (5436) | Groq chat endpoint (T-061); MCP tools, Telegram and RAG are next |
 | Notification Service | 8086 | none initially | Deferred; no notification implementation in MVP |
 | Angular frontend | 4200 | none | Planned |
 
