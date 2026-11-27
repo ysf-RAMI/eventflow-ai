@@ -4,6 +4,17 @@ server:
 spring:
   application:
     name: ai-agent-service
+  ai:
+    openai:
+      api-key: ${GROQ_API_KEY}
+      base-url: https://api.groq.com/openai/v1
+      chat:
+        model: ${GROQ_MODEL:llama-3.3-70b-versatile}
+        temperature: 0.2
+  http:
+    client:
+      connect-timeout: 2s
+      read-timeout: 30s
   datasource:
     url: jdbc:postgresql://localhost:5436/ai_db
     username: eventflow
