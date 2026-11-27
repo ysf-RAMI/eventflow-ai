@@ -61,10 +61,21 @@ Create GitHub issues from these tasks and keep the task ID in each title. The cu
 | T-051 | Angular event list and details | Role 4 | T-012 | Events load from Catalog |
 | T-052 | Angular availability, booking and simulated payment flow | Role 4 | T-043, T-051 | Customer flow is implemented |
 
-## Deferred phase — AI and notifications
+## Phase 6 — AI Agent Service
 
-- AI Agent Service, Spring AI, RAG, pgvector and restricted MCP tools.
-- Notification Service and Telegram.
+| ID | Task | Owner | Depends on | Done when |
+|---|---|---|---|---|
+| T-060 | AI Agent skeleton, `ai_db` (pgvector) and Flyway baseline | Role 3 | T-002 | Application starts, health is UP, the `vector` extension is installed |
+| T-061 | Groq chat endpoint through Spring AI | Role 3 | T-060 | A chat request is answered by a Groq model; the API key comes from an environment variable and is never committed |
+| T-062 | MCP client with Catalog's read-only tools | Role 3 | T-060, T-013 | The agent can call `searchEvents` and `getEventDetails` |
+| T-063 | MCP client with Booking and Inventory read tools | Role 3 | T-062, T-024, T-035 | Read-only tools work; no payment or hold tool is reachable |
+| T-064 | Telegram channel for the agent | Role 3 | T-061 | Telegram messages reach the agent; linking a Telegram chat to a customer is agreed first (ADR 0005) |
+| T-065 | RAG: ingest policy documents into pgvector and answer with citations | Role 3 | T-061 | Answers cite the document chunks they used |
+| T-066 | Agent safety checks | Role 3 | T-063, T-065 | Tool allowlist enforced; the agent cannot pay or confirm payment; prompt-injection cases handled |
+
+## Deferred phase — notifications
+
+- Notification Service (outbound Telegram notifications to customers).
 - GraphQL.
 
 ## Deferred QA phase — not part of the current task
