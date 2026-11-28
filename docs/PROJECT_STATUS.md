@@ -25,8 +25,7 @@ This branch contains the corrected architecture, database, and core domain/persi
 - Catalog has the Event domain model, repository, application skeleton, migration, and PostgreSQL configuration.
 - Booking has the Booking and BookingItem domain models, repositories, application skeleton, migration, and PostgreSQL configuration.
 - Payment has the Payment domain model, repository, application skeleton, migration, and PostgreSQL configuration.
-- API Gateway, Angular, AI Agent, and Notification are planned/deferred components. The AI Agent has a skeleton (T-060).
-
+- API Gateway, Angular, AI Agent, and Notification are planned/deferred components.
 
 ## Tests and verification
 
@@ -66,6 +65,12 @@ Catalog now generates an event's seats and prices on publish and sends them to I
 ## Catalog implementation follow-up (T-013)
 
 Catalog now hosts read-only MCP tools (`searchEvents`, `getEventDetails`) at `/mcp`, using the Spring AI MCP server starter over Streamable HTTP. The tools call `EventService` and return published events only. To use the starter, Catalog was upgraded to Spring Boot 4.1.2 and Spring Cloud 2025.1.5, the same versions Booking uses; the existing REST and seat-provisioning checks were rerun and passed after the upgrade. A JSON-RPC script verified the tool list, searches, details and error cases; no automated tests were added. The `/mcp` endpoint has no authentication until T-050. The Inventory and Booking MCP tools are not implemented. This update does not establish end-to-end readiness.
+
+### `inventory-service`
+- **T-020 (Done):** `Seat` entity, repository, and Flyway `V1` schema migration.
+- **T-021 (Done):** `SeatHold` entity, `HoldStatus` enum, repository, and Flyway `V2` migration enforcing one active hold per seat.
+- **T-025 (Done):** `POST /internal/events/{eventId}/seats` idempotent provisioning endpoint (`201` on create, `200` on idempotent retry, `400` on validation errors). Verified via `mvn test`, direct `curl` + PostgreSQL checks, and end-to-end event publishing from `catalog-service`.
+- **T-022 / T-023 / T-024 / T-026 (Pending):** Seat hold lifecycle endpoints, hold expiry scheduler, read queries/MCP tools, and Catalog published-event check are not yet implemented.
 
 ## AI Agent skeleton (T-060)
 

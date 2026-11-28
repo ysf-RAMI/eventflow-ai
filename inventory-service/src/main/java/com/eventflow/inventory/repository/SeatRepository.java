@@ -10,4 +10,6 @@ import java.util.UUID;
 public interface SeatRepository extends JpaRepository<Seat, UUID> {
 
     List<Seat> findByEventId(UUID eventId);
+    boolean existsByEventId(UUID eventId);
+    long countByEventId(UUID eventId);
 }

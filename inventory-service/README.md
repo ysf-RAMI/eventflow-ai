@@ -73,3 +73,19 @@ The Booking workflow is:
 The hold ID is stored by Booking only as an external reference. Booking does not create an
 Inventory entity or a cross-service JPA relationship. The local Booking development stub
 simulates these calls until the Inventory REST service is available.
+
+
+## Implementation Status
+
+### Implemented
+- **T-020 / T-021 — Domain Model & Schema:** `Seat` and `SeatHold` JPA entities with optimistic locking (`@Version`), domain state transitions (`AVAILABLE`, `HELD`, `SOLD`; `ACTIVE`, `CONFIRMED`, `RELEASED`, `EXPIRED`), and Flyway PostgreSQL migrations (`V1`, `V2`).
+- **T-025 — Internal Seat Provisioning (`POST /internal/events/{eventId}/seats`):**
+    - Idempotent seat creation returning `201 Created` on initial provisioning and `200 OK` on identical retries.
+    - Request validation returning `400 Bad Request` (`application/problem+json`) on empty seat lists, duplicate labels, or negative prices.
+    - Verified via `mvn test`, `curl` checks against PostgreSQL (`inventory_db`), and end-to-end event publishing with `catalog-service`.
+
+### Pending
+- **T-022:** Atomic multi-seat hold, confirm, and release endpoints (`POST /internal/holds`, `/confirm`, `/release`).
+- **T-023:** Scheduled expiration of overdue `ACTIVE` seat holds.
+- **T-024:** Read-only seat availability queries and MCP tools.
+- **T-026:** Outbound check to `catalog-service` ensuring events are `PUBLISHED` before creating holds (`503` on Catalog outage).
